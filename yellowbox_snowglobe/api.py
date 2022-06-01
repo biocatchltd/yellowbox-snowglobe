@@ -45,7 +45,9 @@ class SnowGlobe(WebServer):
 
     @class_http_endpoint(['POST'], '/session/v1/login-request')
     async def login_request(self, request: Request):
-        session = SnowGlobeSession(self)
+        db = request.query_params.get('databaseName')
+        schema = request.query_params.get('schemaName', 'public')
+        session = SnowGlobeSession(self, db, schema)
         self.sessions[session.token] = session
         return JSONResponse({'data': {'token': session.token, 'masterToken': 'SwordFish'}, 'success': True})
 
@@ -66,10 +68,16 @@ class SnowGlobe(WebServer):
             if query.endswith(';'):
                 query = query[:-1]
             result = session.do_query(query)
-            if result is None:
-                return JSONResponse({'data': {"rowtype": [], "rowset": []}, 'success': True})
-            elif isinstance(result, int):
-                return JSONResponse({'data': {'rowcount': result, "rowtype": [], "rowset": []}, 'success': True})
+            data = {
+                'finalDatabaseName': session.db,
+                'finalSchemaName': session.schema,
+                "rowtype": [],
+                "rowset": [],
+            }
+            if isinstance(result, int):
+                return JSONResponse({'data': data, 'success': True})
+            elif not result:
+                return JSONResponse({'data': data, 'success': True})
             else:
                 # we need to guess the types of the columns
                 col_names = result[0]._fields
@@ -94,7 +102,9 @@ class SnowGlobe(WebServer):
                     if t is not None and t[1] is not None:
                         for row in rows:
                             row[i] = t[1](row[i])
-                return JSONResponse({'data': {'rowtype': columns, 'rowset': rows}, 'success': True})
+                data['rowtype'] = columns
+                data['rowset'] = rows
+                return JSONResponse({'data': data, 'success': True})
         except Exception as e:
             print_exc()
             return JSONResponse({'success': False, 'message': str(e)})

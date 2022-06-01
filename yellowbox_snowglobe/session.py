@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING, Optional, List, Union
+
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine, Transaction, Connection, Row
-
-from typing import TYPE_CHECKING, Optional, Dict, Tuple, List, Sequence, Any, Union
 
 if TYPE_CHECKING:
     from yellowbox_snowglobe.api import SnowGlobe
@@ -14,15 +14,18 @@ QUERY_RESPONSE = Union[None, int, List[Row]]
 class SnowGlobeSession:
     next_token = 0
 
-    def __init__(self, owner: SnowGlobe):
+    def __init__(self, owner: SnowGlobe, db: Optional[str], schema: Optional[str]):
         self.owner = owner
 
         self.token = str(self.next_token)
         self.next_token += 1
-        self.db: Optional[str] = None
+        self.schema = schema
+        self.db = None
         self.engine: Optional[Engine] = None
         self._connection: Optional[Connection] = None
         self._transaction: Optional[Transaction] = None
+        if db:
+            self.switch_db(db)
 
     @property
     def connection(self):
@@ -86,6 +89,7 @@ class SnowGlobeSession:
         db_name, _, schema_name = schema_name.rpartition(".")
         if db_name:
             self.switch_db(db_name)
+        self.schema = schema_name
         self.connection.execute(f"SET search_path TO {schema_name}")
         return None
 
@@ -110,9 +114,9 @@ class SnowGlobeSession:
         return result.rowcount
 
     def _do_show_schemas(self, query) -> QUERY_RESPONSE:
-        query = "select null as created_on, table_name as name, null as is_default, null as is_current," \
+        query = "select null as created_on, schema_name as name, null as is_default, null as is_current," \
                 " null as database_name, null as owner, null as comment, null as options," \
-                " null as retention_time FROM information_schema.tables" + query[len("show schemas"):]
+                " null as retention_time FROM information_schema.schemata" + query[len("show schemas"):]
         return self.do_query(query)
 
     def _do_show_tables(self, query) -> QUERY_RESPONSE:
@@ -126,9 +130,9 @@ class SnowGlobeSession:
 
     def _do_describe_table(self, query) -> QUERY_RESPONSE:
         _, _, table_name = query.rpartition(" ")
-        query = f"SELECT column_name as name, data_type as type, 'COLUMN' as kind, is_nullable as \"null?\"," \
-                f" column_default as default, NULL as primary_key, NULL as unique_key, NULL as check," \
-                f" NULL as expression, NULL as comment, NULL as \"policy name\" FROM information_schema.columns" \
+        query = "SELECT column_name as name, data_type as type, 'COLUMN' as kind, is_nullable as \"null?\"," \
+                " column_default as default, NULL as primary_key, NULL as unique_key, NULL as check," \
+                " NULL as expression, NULL as comment, NULL as \"policy name\" FROM information_schema.columns" \
                 f" WHERE table_name = '{table_name}'"
         return self.do_query(query)
 
