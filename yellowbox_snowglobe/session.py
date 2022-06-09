@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING, Optional, List, Union
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine, Transaction, Connection, Row
 
+from yellowbox_snowglobe.schema_init import SCHEMA_INITIALIZE_SCRIPT
+
 if TYPE_CHECKING:
     from yellowbox_snowglobe.api import SnowGlobe
 
@@ -41,8 +43,25 @@ class SnowGlobeSession:
         self.db = db_name
         conn_string = self.owner.sql_service.database(db_name).local_connection_string()
         self.engine = create_engine(conn_string)
+        self.schema = 'public'
         self._connection = self.engine.connect()
         self._transaction = self._connection.begin()
+        self._initialize_schema()
+
+    def _initialize_schema(self):
+        """
+        create all the necessary snowglobe conversions in the current schema
+        """
+        with self.connection.begin_nested():
+            # right now, the only indicator of initialization is the presence of the metadata table
+            exists = self.connection.execute(text(f"SELECT EXISTS (SELECT FROM information_schema.tables"
+                                                  f" WHERE  table_schema = '{self.schema}'"
+                                                  f" AND table_name = '{self.owner.metadata_table_name}')")).scalar()
+            if exists:
+                return
+            self.connection.execute(f'SET search_path TO {self.schema};')
+            self.connection.execute(SCHEMA_INITIALIZE_SCRIPT)
+            self.connection.execute(text(f"CREATE TABLE IF NOT EXISTS {self.owner.metadata_table_name}()"))
 
     def do_query(self, query: str) -> QUERY_RESPONSE:
         # queries are always normalized to be without a semicolon
@@ -57,13 +76,8 @@ class SnowGlobeSession:
         for word in search_query:
             if callable(prefix_search_root):
                 break
-            next_root = prefix_search_root.get(word) or prefix_search_root.get(None)
-            while isinstance(next_root, str):
-                next_root = prefix_search_root.get(next_root)
-
-            if next_root:
-                prefix_search_root = next_root
-            else:
+            prefix_search_root = prefix_search_root.get(word) or prefix_search_root.get(None)
+            if not prefix_search_root:
                 print(f"!!! Unknown query: {query}")
                 return None
         return prefix_search_root(self, query)
@@ -84,22 +98,19 @@ class SnowGlobeSession:
         self.switch_db(db_name)
         return None
 
-    def _do_use_schema(self, query) -> QUERY_RESPONSE:
+    def _do_set_schema(self, query) -> QUERY_RESPONSE:
         _, _, schema_name = query.rpartition(" ")
-        db_name, _, schema_name = schema_name.rpartition(".")
-        if db_name:
-            self.switch_db(db_name)
+        # todo assert the schema exists
         self.schema = schema_name
-        self.connection.execute(f"SET search_path TO {schema_name}")
+        self._initialize_schema()
         return None
 
-    def _do_use_unknown(self, query) -> QUERY_RESPONSE:
-        postfix = query[4:]
-        if "." in postfix:
-            qualified = "use schema " + postfix
-        else:
-            qualified = "use database " + postfix
-        return self.do_query(qualified)
+    def _do_retrieve(self, query) -> QUERY_RESPONSE:
+        _, _, query_id = query.rpartition(" ")
+        res = self.owner.query_results.pop(query_id, None)
+        if res is None:
+            return None  # todo some better handling here?
+        return res
 
     def _do_select(self, query) -> QUERY_RESPONSE:
         result = self.connection.execute(text(query)).all()
@@ -113,56 +124,27 @@ class SnowGlobeSession:
         result = self.connection.execute(text(query))
         return result.rowcount
 
-    def _do_show_schemas(self, query) -> QUERY_RESPONSE:
-        query = "select null as created_on, schema_name as name, null as is_default, null as is_current," \
-                " null as database_name, null as owner, null as comment, null as options," \
-                " null as retention_time FROM information_schema.schemata" + query[len("show schemas"):]
-        return self.do_query(query)
-
-    def _do_show_tables(self, query) -> QUERY_RESPONSE:
-        query = "select null as created_on, table_name as name, table_catalog as database_name," \
-                " table_schema as schema_name, 'TABLE' as kind, NULL as comment, NULL as cluster_by, NULL as rows," \
-                " NULL as bytes, NULL as owner, NULL as retention_time, NULL as change_tracking," \
-                " NULL as search_optimization, NULL as search_optimization_progress," \
-                " NULL as search_optimization_bytes, NULL as is_external FROM information_schema.tables" \
-                " WHERE table_type = 'BASE TABLE'" + query[len("show tables"):]
-        return self.do_query(query)
-
-    def _do_describe_table(self, query) -> QUERY_RESPONSE:
-        _, _, table_name = query.rpartition(" ")
-        query = "SELECT column_name as name, data_type as type, 'COLUMN' as kind, is_nullable as \"null?\"," \
-                " column_default as default, NULL as primary_key, NULL as unique_key, NULL as check," \
-                " NULL as expression, NULL as comment, NULL as \"policy name\" FROM information_schema.columns" \
-                f" WHERE table_name = '{table_name}'"
-        return self.do_query(query)
-
     FUNC_BY_EXACT = {
-        "commit": _do_commit,
-        "rollback": _do_rollback,
+        "!commit": _do_commit,
+        "!rollback": _do_rollback,
     }
 
     FUNC_BY_PREFIX = {  # all prefixes hase an implicit space after them
-        "use": {
-            "database": _do_use_database,
-            "schema": _do_use_schema,
-            None: _do_use_unknown,
-        },
+        "!switch_db": _do_use_database,
+        "!set_schema": _do_set_schema,
+        "!retrieve": _do_retrieve,
         "select": _do_select,
         "insert": _do_mutating_noresponse,
-        "create": _do_mutating_noresponse,
+        "create": {
+            'database': _do_ignore,
+            None: _do_mutating_noresponse,
+        },
+        "set": _do_mutating_noresponse,
         "delete": _do_mutating,
         "update": _do_mutating,
         "alter": {
             "table": _do_mutating_noresponse,
         },
-        "show": {
-            "schemas": _do_show_schemas,
-            "tables": _do_show_tables,
-        },
-        "describe": {
-            "table": _do_describe_table,
-        },
-        "desc": "describe"
     }
 
     def close(self):
