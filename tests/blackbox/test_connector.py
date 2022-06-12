@@ -62,6 +62,7 @@ def test_create_and_switch_db(db, snowglobe):
 
     assert snowglobe.database_exists(new_db_name)
 
+
 def test_switch_to_same_db(db, snowglobe, connection):
     with connection.cursor() as cursor:
         cursor.execute(f'create database {db}')

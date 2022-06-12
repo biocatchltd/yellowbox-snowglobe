@@ -32,6 +32,7 @@ async def test_connect_async(docker_client):
             results = conn.cursor().execute("select x, y from bar where y like 't%'").fetchall()
             assert results == [(2, 'two'), (3, 'three')]
 
+
 def test_connect_to_db(docker_client):
     with SnowGlobeService.run(docker_client) as service:
         with connector.connect(**service.local_connection_kwargs(), database='foo') as conn:

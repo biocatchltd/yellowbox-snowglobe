@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Connection, Engine, Row, Transaction
@@ -27,15 +27,21 @@ class SnowGlobeSession:
         self.db: Optional[str] = None
         self.engine: Optional[Engine] = None
         self._connection: Optional[Connection] = None
-        self.transaction: Optional[Transaction] = None
+        self._transaction: Optional[Transaction] = None
         if db:
             self.switch_db(db, schema)
 
     @property
-    def connection(self):
+    def connection(self) -> Connection:
         if not self._connection:
             raise Exception("No connection exists, make sure to use a database first")
         return self._connection
+
+    @property
+    def transaction(self) -> Transaction:
+        if not self._transaction:
+            raise Exception("No connection exists, make sure to use a database first")
+        return self._transaction
 
     def switch_db(self, db_name: str, schema_name: str = 'public'):
         if self.db == db_name:
@@ -47,7 +53,7 @@ class SnowGlobeSession:
         self.engine = create_engine(conn_string)
         self.schema = schema_name
         self._connection = self.engine.connect()
-        self.transaction = self._connection.begin()
+        self._transaction = self._connection.begin()
         self._initialize_schema()
 
     def _initialize_schema(self):
@@ -68,7 +74,7 @@ class SnowGlobeSession:
     def do_query(self, query: str) -> QUERY_RESPONSE:
         # queries are always normalized to be without a semicolon
         query_lower = query.lower()
-        prefix_search_root = self.FUNC_BY_PREFIX
+        prefix_search_root: Any = self.FUNC_BY_PREFIX
         search_query = query_lower.split()
         # we assume to be always prefix-free, with a default fallback
         for word in search_query:
@@ -118,8 +124,8 @@ class SnowGlobeSession:
     def _do_mutating_noresponse(self, query) -> QUERY_RESPONSE:
         self.connection.execute(text(query))
         return None
-    # endregion
 
+    # endregion
 
     # here we map SQL keywords to whichever handler we want to use on queries with them
     # think of this like a prefix trie, with NONE as a fallback

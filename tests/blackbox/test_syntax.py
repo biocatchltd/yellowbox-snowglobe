@@ -36,6 +36,7 @@ def test_date(connection, schema):
     res = connection.cursor().execute("select year(x), month(x), day(x) from bar;").fetchall()
     assert res == [(2020, 1, 1), (2020, 2, 2), (2020, 3, 3), (2020, 10, 10)]
 
+
 def test_bools(connection):
     connection.cursor().execute('create table bar (x int, y text)')
     connection.cursor().execute("insert into bar values (1, 'one'), (2, 'two'), (3, 'three'), (10, 'ten')")

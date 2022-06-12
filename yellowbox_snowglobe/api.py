@@ -15,8 +15,7 @@ from yellowbox.extras.postgresql import PostgreSQLService
 from yellowbox.extras.webserver import WebServer, class_http_endpoint
 
 from yellowbox_snowglobe.session import SnowGlobeSession
-from yellowbox_snowglobe.snow_to_post import (snow_to_post,
-                                              split_sql_to_statements)
+from yellowbox_snowglobe.snow_to_post import snow_to_post, split_sql_to_statements
 
 
 async def unpack_request_body(request: Request):
@@ -102,7 +101,7 @@ class SnowGlobeAPI(WebServer):
             raise HTTPException(status_code=401, detail='Invalid Authorization header')
         return self.sessions[token]
 
-    @class_http_endpoint(['POST'], '/session/v1/login-request')
+    @class_http_endpoint(['POST'], '/session/v1/login-request')  # type: ignore[arg-type]
     async def login_request(self, request: Request):
         db = request.query_params.get('databaseName')
         schema = request.query_params.get('schemaName', 'public')
@@ -110,7 +109,7 @@ class SnowGlobeAPI(WebServer):
         self.sessions[session.token] = session
         return JSONResponse({'data': {'token': session.token, 'masterToken': 'SwordFish'}, 'success': True})
 
-    @class_http_endpoint(['POST'], '/session')
+    @class_http_endpoint(['POST'], '/session')  # type: ignore[arg-type]
     async def delete_session(self, request: Request):
         if request.query_params.get('delete') == 'true':
             session = self.session_from_request(request)
@@ -119,7 +118,7 @@ class SnowGlobeAPI(WebServer):
             return JSONResponse({'success': True})
         return Response(status_code=404)
 
-    @class_http_endpoint(['POST'], '/queries/v1/query-request')
+    @class_http_endpoint(['POST'], '/queries/v1/query-request')  # type: ignore[arg-type]
     async def query_request(self, request: Request):
         try:
             session = self.session_from_request(request)
@@ -155,7 +154,7 @@ class SnowGlobeAPI(WebServer):
             # telling us what the error is (or that it's happening)
             return JSONResponse({'success': False, 'message': str(e)})
 
-    @class_http_endpoint(['GET'], '/monitoring/queries/{query_id:str}')
+    @class_http_endpoint(['GET'], '/monitoring/queries/{query_id:str}')  # type: ignore[arg-type]
     async def query_monitoring_query(self, request: Request):
         query_id = request.path_params['query_id']
         if query_id not in self.query_results:

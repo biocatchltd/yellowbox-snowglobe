@@ -1,8 +1,6 @@
 from pytest import mark
 
-from yellowbox_snowglobe.snow_to_post import (TextLiteral, snow_to_post,
-                                              split_literals,
-                                              split_sql_to_statements)
+from yellowbox_snowglobe.snow_to_post import TextLiteral, snow_to_post, split_literals, split_sql_to_statements
 
 
 @mark.parametrize('snow, post', [
