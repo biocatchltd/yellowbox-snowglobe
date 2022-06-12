@@ -1,5 +1,6 @@
 from pytest import mark
 
+
 def test_show_schemas(connection):
     connection.cursor().execute('create schema loolie')
     connection.cursor().execute('create schema moonie')

@@ -1,7 +1,12 @@
 import re
-
 from dataclasses import dataclass
-from typing import Iterator, Union, Pattern, Iterable
+from typing import Iterable, Iterator, Pattern, Union
+
+"""
+This is a miniature transpiler that converts a snowflake-dialect query to a postgresql query.
+Note that anything that can handled outside of this (like making a function called "year" that gets a date's year)
+Is handled in the "schema_init" script instead.
+"""
 
 
 @dataclass
@@ -10,6 +15,7 @@ class TextLiteral:
 
 
 def split_literals(query: str) -> Iterator[Union[str, TextLiteral]]:
+    # splits test literals out of a query
     while query:
         next_str_ind = query.find("'")
         if next_str_ind == -1:
@@ -31,6 +37,7 @@ def split_literals(query: str) -> Iterator[Union[str, TextLiteral]]:
 
 
 def split_sql_to_statements(query: str) -> Iterator[str]:
+    # splits a compound query to multiple statements, splitting on non-literal ";"
     buffer = []
     for part in split_literals(query):
         if isinstance(part, TextLiteral):
@@ -48,6 +55,15 @@ def split_sql_to_statements(query: str) -> Iterator[str]:
     last_bit = ''.join(buffer)
     if last_bit:
         yield last_bit
+
+
+"""
+A Rule is replacement rule that converts a snowflake-dialect query to a postgresql query.
+for example there's a rule that will turn "a..b" into "a.public.b"
+
+It's very important that rules not self-generate, as that will cause an infinite loop.
+I.E don't make a rule that replaces "a b" with "a b c"
+"""
 
 
 @dataclass

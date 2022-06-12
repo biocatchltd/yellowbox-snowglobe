@@ -1,2 +1,2 @@
 from yellowbox_snowglobe._version import __version__
-from yellowbox_snowglobe.service import SnowGlobe
+from yellowbox_snowglobe.service import SnowGlobeService

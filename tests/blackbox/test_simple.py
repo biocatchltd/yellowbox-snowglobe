@@ -1,6 +1,5 @@
-from pytest import mark
-
 import snowflake.connector as connector
+from pytest import mark
 
 from yellowbox_snowglobe.service import SnowGlobeService
 

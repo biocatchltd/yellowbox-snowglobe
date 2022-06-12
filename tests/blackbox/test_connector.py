@@ -1,5 +1,5 @@
-from snowflake.connector import DictCursor
 import snowflake.connector as connector
+from snowflake.connector import DictCursor
 
 
 def test_select_as(connection):

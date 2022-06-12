@@ -18,5 +18,8 @@
   creates it on the fly if needed)
 * `flatten`
   * the resulting table will only have the `values` column
-* async queries: snowglobe always handles queries synchronously. It also stores async results to be retieved later as 
-  though they were async. As such, snowglobe queries will never be in a "pending" state.
+* async queries
+  * snowglobe always handles queries synchronously. It also stores async results to be retieved later as 
+    though they were async. As such, snowglobe queries will never be in a "pending" state.
+  * all stored async results are cleared when retrieved, this means that each async result can only
+    be retrieved once.

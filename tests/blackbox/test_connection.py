@@ -1,5 +1,5 @@
-from pytest import raises
 import snowflake.connector as connector
+from pytest import raises
 
 
 def test_rollback(snowglobe, db):

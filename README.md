@@ -7,7 +7,7 @@ emulate a snowflake instance.
 ```python
 from yellowbox.clients import open_docker_client
 
-from yellowbox_snowglobe.service import SnowGlobeService
+from yellowbox_snowglobe import SnowGlobeService
 import snowflake.connector as connector
 
 

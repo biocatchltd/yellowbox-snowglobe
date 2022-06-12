@@ -4,18 +4,19 @@ import gzip
 import json
 from dataclasses import dataclass
 from traceback import print_exc
-from typing import Dict, List, Any, Optional, Callable
+from typing import Any, Callable, Dict, List, Optional
 from uuid import uuid4
 
+from sqlalchemy.engine import Row
 from starlette.exceptions import HTTPException
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
-from sqlalchemy.engine import Row
 from yellowbox.extras.postgresql import PostgreSQLService
 from yellowbox.extras.webserver import WebServer, class_http_endpoint
 
 from yellowbox_snowglobe.session import SnowGlobeSession
-from yellowbox_snowglobe.snow_to_post import snow_to_post, split_sql_to_statements
+from yellowbox_snowglobe.snow_to_post import (snow_to_post,
+                                              split_sql_to_statements)
 
 
 async def unpack_request_body(request: Request):
@@ -77,16 +78,20 @@ def sql_alchemy_result_to_snowglobe_result(result: List[Row]) -> Dict[str, Any]:
     return {'rowtype': columns, 'rowset': rows}
 
 
-class SnowGlobe(WebServer):
-    def __init__(self, *args, sql_service: PostgreSQLService, metadata_table_name: str = '__snowglobe_md', **kwargs):
+class SnowGlobeAPI(WebServer):
+    def __init__(self, *args, sql_service: PostgreSQLService, metadata_table_name: str, **kwargs):
         super().__init__('snowglobe', *args, **kwargs)
         self.sql_service = sql_service
-        self.sessions: Dict[str, SnowGlobeSession] = {}
+
+        self.sessions: Dict[str, SnowGlobeSession] = {}  # stores all the live sessions
         self.metadata_table_name = metadata_table_name
 
-        self.query_results: Dict[str, List[Row]] = {}
+        self.query_results: Dict[str, List[Row]] = {}  # stores all the async query results
 
     def session_from_request(self, request):
+        """
+        Get a request's relevant session
+        """
         auth = request.headers.get('Authorization')
         if not auth:
             raise HTTPException(status_code=401, detail='No Authorization header')
@@ -118,7 +123,7 @@ class SnowGlobe(WebServer):
     async def query_request(self, request: Request):
         try:
             session = self.session_from_request(request)
-            body = (await unpack_request_body(request))
+            body = await unpack_request_body(request)
             query = body['sqlText']
             if query.endswith(';'):
                 query = query[:-1]
@@ -138,19 +143,13 @@ class SnowGlobe(WebServer):
                 "rowset": [],
                 "queryId": query_id,
             }
-            if isinstance(result, int):
+            if not result:
                 return JSONResponse({'data': data, 'success': True})
-            elif not result:
-                return JSONResponse({'data': data, 'success': True})
-            else:
-                if body.get('asyncExec', False):
-                    # we should store the result in the server for when it gets retrieved
-                    self.query_results[query_id] = result
-                # we need to guess the types of the columns
-                data.update(
-                    sql_alchemy_result_to_snowglobe_result(result)
-                )
-                return JSONResponse({'data': data, 'success': True})
+            if body.get('asyncExec', False):
+                # we should store the result in the server for when it gets retrieved
+                self.query_results[query_id] = result
+            data.update(sql_alchemy_result_to_snowglobe_result(result))
+            return JSONResponse({'data': data, 'success': True})
         except Exception as e:
             print_exc()  # we print exec here because the connector + webservice combo doesn't always do a good job of
             # telling us what the error is (or that it's happening)

@@ -1,7 +1,7 @@
+import snowflake.connector as connector
 from pytest import fixture
 
 from yellowbox_snowglobe.service import SnowGlobeService
-import snowflake.connector as connector
 
 
 @fixture(scope="session")
