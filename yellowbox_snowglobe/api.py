@@ -3,6 +3,7 @@ from __future__ import annotations
 import gzip
 import json
 from dataclasses import dataclass
+from datetime import datetime
 from traceback import print_exc
 from typing import Any, Callable, Dict, List, Optional
 from uuid import uuid4
@@ -41,6 +42,7 @@ PY_TYPE_TO_SNOW_TYPE = {
     str: SnowType('TEXT'),
     float: SnowType('REAL'),
     bool: SnowType('BOOLEAN', lambda x: str(int(x))),
+    datetime: SnowType('DATETIME', str)
 }  # todo there are a lot more
 
 VARIANT = SnowType('VARIANT')  # this will be the default snow type for when we can't handle the result type
@@ -48,7 +50,7 @@ VARIANT = SnowType('VARIANT')  # this will be the default snow type for when we 
 
 def sql_alchemy_result_to_snowglobe_result(result: List[Row]) -> Dict[str, Any]:
     col_names = result[0]._fields
-    columns = [{'name': col_name, "length": 0, "precision": 0, "scale": 0, "nullable": False}
+    columns = [{'name': col_name.upper(), "length": 0, "precision": 0, "scale": 0, "nullable": False}
                for col_name in col_names]
     rows = [list(row) for row in result]
     for i, col in enumerate(columns):
