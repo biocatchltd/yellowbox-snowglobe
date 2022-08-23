@@ -7,10 +7,10 @@ def test_select_as(connection):
     connection.cursor().execute("insert into bar values (1, 'one'), (2, 'two'), (3, 'three'), (10, 'ten')")
     res = connection.cursor(DictCursor).execute("select x as a, y as b from bar;").fetchall()
     assert res == [
-        {'a': 1, 'b': 'one'},
-        {'a': 2, 'b': 'two'},
-        {'a': 3, 'b': 'three'},
-        {'a': 10, 'b': 'ten'},
+        {'A': 1, 'B': 'one'},
+        {'A': 2, 'B': 'two'},
+        {'A': 3, 'B': 'three'},
+        {'A': 10, 'B': 'ten'},
     ]
 
 
@@ -19,10 +19,10 @@ def test_select_as_name(connection):
     connection.cursor().execute("insert into bar values (1, 'one'), (2, 'two'), (3, 'three'), (10, 'ten')")
     res = connection.cursor(DictCursor).execute("select bar.x::string as \"bar.x::string\" from bar;").fetchall()
     assert res == [
-        {'bar.x::string': '1'},
-        {'bar.x::string': '2'},
-        {'bar.x::string': '3'},
-        {'bar.x::string': '10'},
+        {'BAR.X::STRING': '1'},
+        {'BAR.X::STRING': '2'},
+        {'BAR.X::STRING': '3'},
+        {'BAR.X::STRING': '10'},
     ]
 
 
