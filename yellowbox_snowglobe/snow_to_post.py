@@ -124,6 +124,8 @@ RULES = [
          " column_default as default, NULL as primary_key, NULL as unique_key, NULL as check,"
          " NULL as expression, NULL as comment, NULL as \"policy name\" FROM information_schema.columns"
          r" WHERE table_name = '\2'"),
+    # Ignore sample in queries
+    Rule(re.compile(r"\s*(?i)\bsample\s+\(([0-9\.]+)\s+rows\)"), replacement=r""),
 ]
 
 

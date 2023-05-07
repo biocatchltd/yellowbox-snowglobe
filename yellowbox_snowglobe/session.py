@@ -67,7 +67,7 @@ class SnowGlobeSession:
                                                   f" AND table_name = '{self.owner.metadata_table_name}')")).scalar()
             if exists:
                 return
-            self.connection.execute(f'SET search_path TO {self.schema};')
+            self.connection.execute(text(f'SET search_path TO {self.schema};'))
             self.connection.execute(SCHEMA_INITIALIZE_SCRIPT)
             self.connection.execute(text(f"CREATE TABLE IF NOT EXISTS {self.owner.metadata_table_name}()"))
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import gzip
 import json
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from traceback import print_exc
@@ -48,9 +49,10 @@ PY_TYPE_TO_SNOW_TYPE = {
 VARIANT = SnowType('VARIANT')  # this will be the default snow type for when we can't handle the result type
 
 
-def sql_alchemy_result_to_snowglobe_result(result: List[Row]) -> Dict[str, Any]:
+def sql_alchemy_result_to_snowglobe_result(result: List[Row], aliases: List[str]) -> Dict[str, Any]:
     col_names = result[0]._fields
-    columns = [{'name': col_name.upper(), "length": 0, "precision": 0, "scale": 0, "nullable": False}
+    columns = [{'name': col_name if col_name in aliases else col_name.upper(),
+                "length": 0, "precision": 0, "scale": 0, "nullable": False}
                for col_name in col_names]
     rows = [list(row) for row in result]
     for i, col in enumerate(columns):
@@ -77,6 +79,16 @@ def sql_alchemy_result_to_snowglobe_result(result: List[Row]) -> Dict[str, Any]:
             for row in rows:
                 row[i] = t.connector_converter(row[i])
     return {'rowtype': columns, 'rowset': rows}
+
+
+ALIASES_RE = re.compile(r"([a-zA-Z\.]+)\s+as\s+[\'\"]*([a-zA-Z]+)[\'\"]*")
+
+
+def get_aliases(query: str) -> List[str]:
+    groups = ALIASES_RE.findall(query)
+    if groups:
+        return [matched_group[1] for matched_group in groups]
+    return []
 
 
 class SnowGlobeAPI(WebServer):
@@ -149,7 +161,8 @@ class SnowGlobeAPI(WebServer):
             if body.get('asyncExec', False):
                 # we should store the result in the server for when it gets retrieved
                 self.query_results[query_id] = result
-            data.update(sql_alchemy_result_to_snowglobe_result(result))
+            aliases = get_aliases(stmt)
+            data.update(sql_alchemy_result_to_snowglobe_result(result, aliases))
             return JSONResponse({'data': data, 'success': True})
         except Exception as e:
             print_exc()  # we print exec here because the connector + webservice combo doesn't always do a good job of

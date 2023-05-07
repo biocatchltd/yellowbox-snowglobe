@@ -7,10 +7,34 @@ def test_select_as(connection):
     connection.cursor().execute("insert into bar values (1, 'one'), (2, 'two'), (3, 'three'), (10, 'ten')")
     res = connection.cursor(DictCursor).execute("select x as a, y as b from bar;").fetchall()
     assert res == [
-        {'A': 1, 'B': 'one'},
-        {'A': 2, 'B': 'two'},
-        {'A': 3, 'B': 'three'},
-        {'A': 10, 'B': 'ten'},
+        {'a': 1, 'b': 'one'},
+        {'a': 2, 'b': 'two'},
+        {'a': 3, 'b': 'three'},
+        {'a': 10, 'b': 'ten'},
+    ]
+
+
+def test_select_with_partial_aliases(connection):
+    connection.cursor().execute('create table bar (x int, y text)')
+    connection.cursor().execute("insert into bar values (1, 'one'), (2, 'two'), (3, 'three'), (10, 'ten')")
+    res = connection.cursor(DictCursor).execute("select x as a, y from bar;").fetchall()
+    assert res == [
+        {'a': 1, 'Y': 'one'},
+        {'a': 2, 'Y': 'two'},
+        {'a': 3, 'Y': 'three'},
+        {'a': 10, 'Y': 'ten'},
+    ]
+
+
+def test_select_all_as_uppercase(connection):
+    connection.cursor().execute('create table bar (x int, y text)')
+    connection.cursor().execute("insert into bar values (1, 'one'), (2, 'two'), (3, 'three'), (10, 'ten')")
+    res = connection.cursor(DictCursor).execute("select * from bar;").fetchall()
+    assert res == [
+        {'X': 1, 'Y': 'one'},
+        {'X': 2, 'Y': 'two'},
+        {'X': 3, 'Y': 'three'},
+        {'X': 10, 'Y': 'ten'},
     ]
 
 

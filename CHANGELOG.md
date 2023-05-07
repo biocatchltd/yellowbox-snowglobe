@@ -1,4 +1,8 @@
 # Yellowbox Snowglobe Changelog
+## 0.1.2
+### Changed
+* Ignore sampled queries
+* Field names are not converted to uppercase when using aliases
 ## 0.1.1
 ### Fixed
 * Field names in api response are in uppercase.
