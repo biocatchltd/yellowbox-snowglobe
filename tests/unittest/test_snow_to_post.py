@@ -15,7 +15,7 @@ from yellowbox_snowglobe.snow_to_post import TextLiteral, snow_to_post, split_li
     ("select * from foo where x = 'desc table foo''2'", "select * from foo where x = 'desc table foo''2'"),
     ("select * from foo where x = '''desc table foo''2'", "select * from foo where x = '''desc table foo''2'"),
     ("select * from foo", "select * from foo"),
-    ("select * from foo sample (10 rows)", "select * from foo")
+    ("select * from foo sample (10 rows)", "select * from foo order by random() limit 10")
 ])
 def test_snow_to_post(snow, post):
     assert snow_to_post(snow) == post
