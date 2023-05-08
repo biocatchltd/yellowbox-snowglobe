@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Set
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Connection, Engine, Row, Transaction
@@ -10,7 +10,7 @@ from yellowbox_snowglobe.schema_init import SCHEMA_INITIALIZE_SCRIPT
 if TYPE_CHECKING:
     from yellowbox_snowglobe.api import SnowGlobeAPI
 
-QUERY_RESPONSE = Optional[List[Row]]
+QUERY_RESPONSE = Optional[Sequence[Row]]
 
 
 class SnowGlobeSession:
@@ -28,6 +28,9 @@ class SnowGlobeSession:
         self.engine: Optional[Engine] = None
         self._connection: Optional[Connection] = None
         self._transaction: Optional[Transaction] = None
+
+        self.known_columns: Set[str] = set()  # stores all the columns we know about, updates when a create or alter
+        # is called
         if db:
             self.switch_db(db, schema)
 
@@ -67,7 +70,7 @@ class SnowGlobeSession:
                                                   f" AND table_name = '{self.owner.metadata_table_name}')")).scalar()
             if exists:
                 return
-            self.connection.execute(f'SET search_path TO {self.schema};')
+            self.connection.execute(text(f'SET search_path TO {self.schema};'))
             self.connection.execute(SCHEMA_INITIALIZE_SCRIPT)
             self.connection.execute(text(f"CREATE TABLE IF NOT EXISTS {self.owner.metadata_table_name}()"))
 
@@ -123,6 +126,12 @@ class SnowGlobeSession:
 
     def _do_mutating_noresponse(self, query) -> QUERY_RESPONSE:
         self.connection.execute(text(query))
+        # we need to update the known columns here
+        result = self.connection.execute(text(
+            "select column_name from information_schema.columns c where c.table_schema <> 'pg_catalog'"
+            "AND c.table_schema <> 'information_schema';"
+        ))
+        self.known_columns = set(result.scalars().fetchall())
         return None
 
     # endregion
