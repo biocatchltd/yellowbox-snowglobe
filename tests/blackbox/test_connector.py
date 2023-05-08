@@ -14,7 +14,6 @@ def test_select_as(connection):
     ]
 
 
-
 def test_select_as_name(connection):
     connection.cursor().execute('create table bar (x int, y text)')
     connection.cursor().execute("insert into bar values (1, 'one'), (2, 'two'), (3, 'three'), (10, 'ten')")
