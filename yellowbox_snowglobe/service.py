@@ -1,16 +1,13 @@
-from yellowbox import YellowService, RunMixin, AsyncRunMixin
 from yellowbox.extras.postgresql import PostgreSQLService
 from yellowbox.utils import docker_host_name
 
 from yellowbox_snowglobe.api import SnowGlobeAPI
-from yellowbox_snowglobe.case_mode import CaseMode, IgnoreAll
 
 
-class SnowGlobeService(YellowService, RunMixin, AsyncRunMixin):
-    def __init__(self, *args, metadata_table_name: str = '__snowglobe_md', case_mode: CaseMode = IgnoreAll(), **kwargs):
-        super().__init__()
-        self.sql_service = PostgreSQLService(*args, **kwargs)
-        self.api = SnowGlobeAPI(sql_service=self.sql_service, metadata_table_name=metadata_table_name, case_mode = case_mode)
+class SnowGlobeService(PostgreSQLService):
+    def __init__(self, *args, metadata_table_name: str = '__snowglobe_md', **kwargs):
+        super().__init__(*args, **kwargs)
+        self.api = SnowGlobeAPI(sql_service=self, metadata_table_name=metadata_table_name)
 
     @property
     def api_port(self):
@@ -18,21 +15,18 @@ class SnowGlobeService(YellowService, RunMixin, AsyncRunMixin):
         return self.api.port
 
     def start(self, *args, **kwargs):
-        self.sql_service.start(*args, **kwargs)
+        super().start(*args, **kwargs)
         self.api.start()
         return self
 
     async def astart(self, *args, **kwargs):
-        await self.sql_service.astart(*args, **kwargs)
+        await super().astart(*args, **kwargs)
         self.api.start()
         return self
 
     def stop(self, *args):
         self.api.stop()
-        self.sql_service.stop(*args)
-
-    def is_alive(self) -> bool:
-        return self.api.is_alive() and self.sql_service.is_alive()
+        super().stop(*args)
 
     def _base_connection_kwargs(self):
         return dict(

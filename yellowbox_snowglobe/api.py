@@ -5,7 +5,7 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from traceback import print_exc
-from typing import Any, Callable, Dict, List, Optional, Container, Sequence
+from typing import Any, Callable, Dict, List, Optional
 from uuid import uuid4
 
 from sqlalchemy.engine import Row
@@ -15,7 +15,6 @@ from starlette.responses import JSONResponse, Response
 from yellowbox.extras.postgresql import PostgreSQLService
 from yellowbox.extras.webserver import WebServer, class_http_endpoint
 
-from yellowbox_snowglobe.case_mode import CaseMode
 from yellowbox_snowglobe.session import SnowGlobeSession
 from yellowbox_snowglobe.snow_to_post import snow_to_post, split_sql_to_statements
 
@@ -49,46 +48,46 @@ PY_TYPE_TO_SNOW_TYPE = {
 VARIANT = SnowType('VARIANT')  # this will be the default snow type for when we can't handle the result type
 
 
+def sql_alchemy_result_to_snowglobe_result(result: List[Row]) -> Dict[str, Any]:
+    col_names = result[0]._fields
+    columns = [{'name': col_name.upper(), "length": 0, "precision": 0, "scale": 0, "nullable": False}
+               for col_name in col_names]
+    rows = [list(row) for row in result]
+    for i, col in enumerate(columns):
+        t = None
+        for row in rows:
+            if row[i] is None:
+                col['nullable'] = True
+            else:
+                proposed_type = PY_TYPE_TO_SNOW_TYPE.get(type(row[i]))
+                if proposed_type is None:
+                    # unrecognized type, call it a variant and be done with it
+                    t = VARIANT
+                elif t is None:
+                    t = proposed_type
+                elif t != proposed_type:
+                    # type conflict (I don't know if this can even happen), call it a variant
+                    t = VARIANT
+        if t is None:
+            # if no type was found, we default the column type to variant, AFAICT this will only happen for a result
+            # without rows
+            t = VARIANT
+        col['type'] = t.name
+        if t.connector_converter is not None:
+            for row in rows:
+                row[i] = t.connector_converter(row[i])
+    return {'rowtype': columns, 'rowset': rows}
+
+
 class SnowGlobeAPI(WebServer):
-    def __init__(self, *args, sql_service: PostgreSQLService, metadata_table_name: str, case_mode: CaseMode, **kwargs):
+    def __init__(self, *args, sql_service: PostgreSQLService, metadata_table_name: str, **kwargs):
         super().__init__('snowglobe', *args, **kwargs)
         self.sql_service = sql_service
-        self.case_mode = case_mode
 
         self.sessions: Dict[str, SnowGlobeSession] = {}  # stores all the live sessions
         self.metadata_table_name = metadata_table_name
 
-        self.query_results: Dict[str, Sequence[Row]] = {}  # stores all the async query results
-
-    def sql_alchemy_result_to_snowglobe_result(self, result: List[Row], known_columns: Container[str]) -> Dict[str, Any]:
-        col_names = result[0]._fields
-        columns = [{'name': self.case_mode.convert(col_name, known_columns), "length": 0, "precision": 0, "scale": 0,
-                    "nullable": False} for col_name in col_names]
-        rows = [list(row) for row in result]
-        for i, col in enumerate(columns):
-            t = None
-            for row in rows:
-                if row[i] is None:
-                    col['nullable'] = True
-                else:
-                    proposed_type = PY_TYPE_TO_SNOW_TYPE.get(type(row[i]))
-                    if proposed_type is None:
-                        # unrecognized type, call it a variant and be done with it
-                        t = VARIANT
-                    elif t is None:
-                        t = proposed_type
-                    elif t != proposed_type:
-                        # type conflict (I don't know if this can even happen), call it a variant
-                        t = VARIANT
-            if t is None:
-                # if no type was found, we default the column type to variant, AFAICT this will only happen for a result
-                # without rows
-                t = VARIANT
-            col['type'] = t.name
-            if t.connector_converter is not None:
-                for row in rows:
-                    row[i] = t.connector_converter(row[i])
-        return {'rowtype': columns, 'rowset': rows}
+        self.query_results: Dict[str, List[Row]] = {}  # stores all the async query results
 
     def session_from_request(self, request):
         """
@@ -150,7 +149,7 @@ class SnowGlobeAPI(WebServer):
             if body.get('asyncExec', False):
                 # we should store the result in the server for when it gets retrieved
                 self.query_results[query_id] = result
-            data.update(self.sql_alchemy_result_to_snowglobe_result(result, session.known_columns))
+            data.update(sql_alchemy_result_to_snowglobe_result(result))
             return JSONResponse({'data': data, 'success': True})
         except Exception as e:
             print_exc()  # we print exec here because the connector + webservice combo doesn't always do a good job of
