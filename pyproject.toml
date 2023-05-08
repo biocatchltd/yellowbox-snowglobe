@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "yellowbox-snowglobe"
-version = "0.1.2"
+version = "0.2.0"
 description = ""
 authors = ["Biocatch LTD <serverteam@biocatch.com>"]
 license = "MIT"
@@ -15,7 +15,7 @@ pytest-asyncio = "*"
 flake8 = "*"
 pytest-cov = "*"
 isort = "^5.10.1"
-mypy = "^0.960"
+mypy = ">=1"
 snowflake-connector-python = "^2.7.11"
 
 [build-system]

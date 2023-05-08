@@ -7,10 +7,10 @@ def test_select_as(connection):
     connection.cursor().execute("insert into bar values (1, 'one'), (2, 'two'), (3, 'three'), (10, 'ten')")
     res = connection.cursor(DictCursor).execute("select x as a, y as b from bar;").fetchall()
     assert res == [
-        {'A': 1, 'B': 'one'},
-        {'A': 2, 'B': 'two'},
-        {'A': 3, 'B': 'three'},
-        {'A': 10, 'B': 'ten'},
+        {'a': 1, 'b': 'one'},
+        {'a': 2, 'b': 'two'},
+        {'a': 3, 'b': 'three'},
+        {'a': 10, 'b': 'ten'},
     ]
 
 
@@ -20,10 +20,10 @@ def test_select_as_name(connection):
     connection.cursor().execute("insert into bar values (1, 'one'), (2, 'two'), (3, 'three'), (10, 'ten')")
     res = connection.cursor(DictCursor).execute("select bar.x::string as \"bar.x::string\" from bar;").fetchall()
     assert res == [
-        {'BAR.X::STRING': '1'},
-        {'BAR.X::STRING': '2'},
-        {'BAR.X::STRING': '3'},
-        {'BAR.X::STRING': '10'},
+        {'bar.x::string': '1'},
+        {'bar.x::string': '2'},
+        {'bar.x::string': '3'},
+        {'bar.x::string': '10'},
     ]
 
 
@@ -61,7 +61,7 @@ def test_create_and_switch_db(db, snowglobe):
             cursor.execute('select x, y from bar where x = %s', (10,))
             assert cursor.fetchall() == [(10, 'ten')]
 
-    assert snowglobe.database_exists(new_db_name)
+    assert snowglobe.sql_service.database_exists(new_db_name)
 
 
 def test_switch_to_same_db(db, snowglobe, connection):
@@ -73,4 +73,4 @@ def test_switch_to_same_db(db, snowglobe, connection):
         cursor.execute('select x, y from bar where x = %s', (10,))
         assert cursor.fetchall() == [(10, 'ten')]
 
-    assert snowglobe.database_exists(db)
+    assert snowglobe.sql_service.database_exists(db)
