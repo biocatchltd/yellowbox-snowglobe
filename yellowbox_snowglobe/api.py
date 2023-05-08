@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import gzip
 import json
-import re
 from dataclasses import dataclass
 from datetime import datetime
 from traceback import print_exc
