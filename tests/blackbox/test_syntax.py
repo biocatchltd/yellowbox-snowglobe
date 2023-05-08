@@ -42,3 +42,11 @@ def test_bools(connection):
     connection.cursor().execute("insert into bar values (1, 'one'), (2, 'two'), (3, 'three'), (10, 'ten')")
     res = connection.cursor().execute("select x, y LIKE 't%' from bar;").fetchall()
     assert res == [(1, False), (2, True), (3, True), (10, True)]
+
+
+@mark.parametrize('queried_sample,expected_sample', [('2', 2), ('2.3', 2), ('2.5', 3), ('2.7', 3)])
+def test_sample_query(connection, queried_sample, expected_sample):
+    connection.cursor().execute('create table bar (x int, y text)')
+    connection.cursor().execute("insert into bar values (1, 'one'), (2, 'two'), (3, 'three'), (10, 'ten')")
+    res = connection.cursor().execute(f"select x, y from bar sample ({queried_sample} rows);").fetchall()
+    assert len(res) == expected_sample
