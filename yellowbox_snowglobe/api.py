@@ -5,7 +5,7 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 from traceback import print_exc
-from typing import Any, Callable, Dict, List, Optional, Container, Sequence
+from typing import Any, Callable, Container, Dict, List, Optional, Sequence
 from uuid import uuid4
 
 from sqlalchemy.engine import Row
@@ -60,7 +60,8 @@ class SnowGlobeAPI(WebServer):
 
         self.query_results: Dict[str, Sequence[Row]] = {}  # stores all the async query results
 
-    def sql_alchemy_result_to_snowglobe_result(self, result: List[Row], known_columns: Container[str]) -> Dict[str, Any]:
+    def sql_alchemy_result_to_snowglobe_result(self, result: List[Row], known_columns: Container[str])\
+            -> Dict[str, Any]:
         col_names = result[0]._fields
         columns = [{'name': self.case_mode.convert(col_name, known_columns), "length": 0, "precision": 0, "scale": 0,
                     "nullable": False} for col_name in col_names]

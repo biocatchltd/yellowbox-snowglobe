@@ -1,4 +1,4 @@
-from yellowbox import YellowService, RunMixin, AsyncRunMixin
+from yellowbox import AsyncRunMixin, RunMixin, YellowService
 from yellowbox.extras.postgresql import PostgreSQLService
 from yellowbox.utils import docker_host_name
 
@@ -10,7 +10,8 @@ class SnowGlobeService(YellowService, RunMixin, AsyncRunMixin):
     def __init__(self, *args, metadata_table_name: str = '__snowglobe_md', case_mode: CaseMode = IgnoreAll(), **kwargs):
         super().__init__()
         self.sql_service = PostgreSQLService(*args, **kwargs)
-        self.api = SnowGlobeAPI(sql_service=self.sql_service, metadata_table_name=metadata_table_name, case_mode = case_mode)
+        self.api = SnowGlobeAPI(sql_service=self.sql_service, metadata_table_name=metadata_table_name,
+                                case_mode=case_mode)
 
     @property
     def api_port(self):

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, Set
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Connection, Engine, Row, Transaction
@@ -29,7 +29,8 @@ class SnowGlobeSession:
         self._connection: Optional[Connection] = None
         self._transaction: Optional[Transaction] = None
 
-        self.known_columns = set()  # stores all the columns we know about, updates when a create or alter is called
+        self.known_columns: Set[str] = set()  # stores all the columns we know about, updates when a create or alter
+        # is called
         if db:
             self.switch_db(db, schema)
 
@@ -125,13 +126,12 @@ class SnowGlobeSession:
 
     def _do_mutating_noresponse(self, query) -> QUERY_RESPONSE:
         self.connection.execute(text(query))
-        if self.owner.case_mode.load_column_names:
-            # we need to update the known columns here
-            result = self.connection.execute(text(
-                """select column_name from information_schema.columns c 
-                where c.table_schema <> 'pg_catalog' AND c.table_schema <> 'information_schema';"""
-            ))
-            self.known_columns = set(result.scalars().fetchall())
+        # we need to update the known columns here
+        result = self.connection.execute(text(
+            "select column_name from information_schema.columns c where c.table_schema <> 'pg_catalog'"
+            "AND c.table_schema <> 'information_schema';"
+        ))
+        self.known_columns = set(result.scalars().fetchall())
         return None
 
     # endregion
