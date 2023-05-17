@@ -42,9 +42,6 @@ async def test_simultaneous_connections(docker_client):
             conn.cursor().execute('use schema loolie')
             conn.cursor().execute('create table bar (x int, y text)')
             conn.cursor().execute("insert into bar values (1, 'one'), (2, 'two'), (3, 'three')")
-            # conn.cursor().execute('delete from bar where x = 10')
-            # results = conn.cursor().execute("select x, y from bar where y like 't%'").fetchall()
-            # assert results == [(2, 'two'), (3, 'three')]
         with connector.connect(**service.local_connection_kwargs()) as conn:
             conn.cursor().execute('use database foo;')
             conn.cursor().execute('use schema loolie')
