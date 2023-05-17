@@ -1,4 +1,7 @@
 # Yellowbox Snowglobe Changelog
+## 0.2.1
+### Fixed
+* a bug with concurrent sessions
 ## 0.2.0
 ### Changed
 * the service now contains a postgresql service rather than inheriting from it.
