@@ -21,7 +21,7 @@ class SnowGlobeSession:
         self.owner = owner
 
         self.token = str(self.next_token)
-        self.next_token += 1
+        SnowGlobeSession.next_token += 1
         self.schema = schema
         # all these fields are set and replaced together when we switch the DB
         self.db: Optional[str] = None
