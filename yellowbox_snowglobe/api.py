@@ -42,7 +42,7 @@ PY_TYPE_TO_SNOW_TYPE = {
     int: SnowType('FIXED'),
     str: SnowType('TEXT'),
     float: SnowType('REAL'),
-    bool: SnowType('BOOLEAN', lambda x: str(int(x)) if x is not None else None),
+    bool: SnowType('BOOLEAN', lambda x: str(int(x))),
     datetime: SnowType('DATETIME', str)
 }  # todo there are a lot more
 
@@ -88,7 +88,7 @@ class SnowGlobeAPI(WebServer):
             col['type'] = t.name
             if t.connector_converter is not None:
                 for row in rows:
-                    row[i] = t.connector_converter(row[i])
+                    row[i] = t.connector_converter(row[i]) if row[i] is not None else None
         return {'rowtype': columns, 'rowset': rows}
 
     def session_from_request(self, request):
