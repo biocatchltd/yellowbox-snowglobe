@@ -44,6 +44,13 @@ def test_bools(connection):
     assert res == [(1, False), (2, True), (3, True), (10, True)]
 
 
+def test_null_bools(connection):
+    connection.cursor().execute('create table bar (x int, y boolean)')
+    connection.cursor().execute("insert into bar values (1, true), (2, false), (3, null)")
+    res = connection.cursor().execute("select * from bar;").fetchall()
+    assert res == [(1, True), (2, False), (3, None)]
+
+
 @mark.parametrize('queried_sample,expected_sample', [('2', 2), ('2.3', 2), ('2.5', 3), ('2.7', 3)])
 def test_sample_query(connection, queried_sample, expected_sample):
     connection.cursor().execute('create table bar (x int, y text)')

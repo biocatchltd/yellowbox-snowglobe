@@ -42,7 +42,7 @@ PY_TYPE_TO_SNOW_TYPE = {
     int: SnowType('FIXED'),
     str: SnowType('TEXT'),
     float: SnowType('REAL'),
-    bool: SnowType('BOOLEAN', lambda x: str(int(x))),
+    bool: SnowType('BOOLEAN', lambda x: str(int(x)) if x is not None else None),
     datetime: SnowType('DATETIME', str)
 }  # todo there are a lot more
 
