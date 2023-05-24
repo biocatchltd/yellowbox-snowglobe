@@ -39,14 +39,14 @@ class SnowType:
 
 
 PY_TYPE_TO_SNOW_TYPE = {
-    int: SnowType('FIXED'),
+    int: SnowType('NUMBER'),
     str: SnowType('TEXT'),
-    float: SnowType('REAL'),
+    float: SnowType('FLOAT'),
     bool: SnowType('BOOLEAN', lambda x: str(int(x))),
-    datetime: SnowType('DATETIME', str)
+    datetime: SnowType('TIMESTAMP_NTZ', str)
 }  # todo there are a lot more
 
-VARIANT = SnowType('VARIANT')  # this will be the default snow type for when we can't handle the result type
+OBJECT = SnowType('OBJECT')  # this will be the default snow type for when we can't handle the result type
 
 
 class SnowGlobeAPI(WebServer):
@@ -75,16 +75,16 @@ class SnowGlobeAPI(WebServer):
                     proposed_type = PY_TYPE_TO_SNOW_TYPE.get(type(row[i]))
                     if proposed_type is None:
                         # unrecognized type, call it a variant and be done with it
-                        t = VARIANT
+                        t = OBJECT
                     elif t is None:
                         t = proposed_type
                     elif t != proposed_type:
                         # type conflict (I don't know if this can even happen), call it a variant
-                        t = VARIANT
+                        t = OBJECT
             if t is None:
                 # if no type was found, we default the column type to variant, AFAICT this will only happen for a result
                 # without rows
-                t = VARIANT
+                t = OBJECT
             col['type'] = t.name
             if t.connector_converter is not None:
                 for row in rows:
