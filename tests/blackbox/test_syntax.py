@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pytest import mark
 
 
@@ -42,6 +44,16 @@ def test_bools(connection):
     connection.cursor().execute("insert into bar values (1, 'one'), (2, 'two'), (3, 'three'), (10, 'ten')")
     res = connection.cursor().execute("select x, y LIKE 't%' from bar;").fetchall()
     assert res == [(1, False), (2, True), (3, True), (10, True)]
+
+
+def test_null_bools_and_dates(connection):
+    connection.cursor().execute('create table bar (x timestamp, y boolean)')
+    connection.cursor().execute("insert into bar values "
+                                "('2014-01-01 16:00:00', true),"
+                                " (null, false), "
+                                "('2023-01-08 17:00:00', null)")
+    res = connection.cursor().execute("select * from bar;").fetchall()
+    assert res == [(datetime(2014, 1, 1, 16, 0), True), (None, False), (datetime(2023, 1, 8, 17, 0), None)]
 
 
 @mark.parametrize('queried_sample,expected_sample', [('2', 2), ('2.3', 2), ('2.5', 3), ('2.7', 3)])

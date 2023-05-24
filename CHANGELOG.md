@@ -1,4 +1,7 @@
 # Yellowbox Snowglobe Changelog
+## 0.2.2
+### Fixed
+* SnowType converter now supports None as well
 ## 0.2.1
 ### Fixed
 * a bug with concurrent sessions

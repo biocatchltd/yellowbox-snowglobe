@@ -23,3 +23,4 @@
     though they were async. As such, snowglobe queries will never be in a "pending" state.
   * all stored async results are cleared when retrieved, this means that each async result can only
     be retrieved once.
+* from all the timestamp types in snowflake, only TIMESTAMP_NTZ is currently supported.
