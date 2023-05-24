@@ -3,7 +3,7 @@ from __future__ import annotations
 import gzip
 import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from traceback import print_exc
 from typing import Any, Callable, Container, Dict, List, Optional, Sequence
 from uuid import uuid4
@@ -43,7 +43,7 @@ PY_TYPE_TO_SNOW_TYPE = {
     str: SnowType('TEXT'),
     float: SnowType('FLOAT'),
     bool: SnowType('BOOLEAN', lambda x: str(int(x))),
-    datetime: SnowType('TIMESTAMP_NTZ', lambda x: str(x.timestamp()))
+    datetime: SnowType('TIMESTAMP_NTZ', lambda x: str(x.replace(tzinfo=timezone.utc).timestamp()))
 }  # todo there are a lot more
 
 OBJECT = SnowType('OBJECT')  # this will be the default snow type for when we can't handle the result type

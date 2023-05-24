@@ -53,7 +53,7 @@ def test_null_bools_and_dates(connection):
                                 " (null, false), "
                                 "('2023-01-08 17:00:00', null)")
     res = connection.cursor().execute("select * from bar;").fetchall()
-    assert res == [(datetime(2014, 1, 1, 14, 0), True), (None, False), (datetime(2023, 1, 8, 15, 0), None)]
+    assert res == [(datetime(2014, 1, 1, 16, 0), True), (None, False), (datetime(2023, 1, 8, 17, 0), None)]
 
 
 @mark.parametrize('queried_sample,expected_sample', [('2', 2), ('2.3', 2), ('2.5', 3), ('2.7', 3)])
