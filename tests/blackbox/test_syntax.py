@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pytest import mark
 
 
@@ -51,7 +53,7 @@ def test_null_bools_and_dates(connection):
                                 " (null, false), "
                                 "('2023-01-08 17:00:00', null)")
     res = connection.cursor().execute("select * from bar;").fetchall()
-    assert res == [('2014-01-01 16:00:00', True), (None, False), ('2023-01-08 17:00:00', None)]
+    assert res == [(datetime(2014, 1, 1, 14, 0), True), (None, False), (datetime(2023, 1, 8, 15, 0), None)]
 
 
 @mark.parametrize('queried_sample,expected_sample', [('2', 2), ('2.3', 2), ('2.5', 3), ('2.7', 3)])
