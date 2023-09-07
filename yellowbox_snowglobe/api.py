@@ -58,7 +58,7 @@ class SnowGlobeAPI(WebServer):
         self.sessions: Dict[str, SnowGlobeSession] = {}  # stores all the live sessions
         self.metadata_table_name = metadata_table_name
 
-        self.query_results: Dict[str, Sequence[Row]] = {}  # stores all the async query results
+        self.query_results: Dict[str, Sequence[Row] | None] = {}  # stores all the async query results
 
     def sql_alchemy_result_to_snowglobe_result(self, result: List[Row], known_columns: Container[str])\
             -> Dict[str, Any]:
