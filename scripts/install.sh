@@ -1,5 +1,6 @@
 #!/bin/sh
 # install poetry and the dev-dependencies of the project
-python -m pip install poetry
+python -m pip install --upgrade setuptools
+curl -sSL https://install.python-poetry.org | python3 - --version 1.5.1
 python -m poetry update --lock
 python -m poetry install
