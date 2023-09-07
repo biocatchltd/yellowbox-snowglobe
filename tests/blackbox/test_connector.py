@@ -39,6 +39,10 @@ def test_async(connection):
             (3, 'three'),
             (10, 'ten'),
         ]
+        cursor.execute_async("select x from bar where x = 4;")  # empty result
+        query_id = cursor.sfqid
+        cursor.get_results_from_sfqid(query_id)
+        assert not cursor.fetchall()
 
 
 def test_args(connection):

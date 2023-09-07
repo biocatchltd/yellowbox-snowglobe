@@ -146,11 +146,11 @@ class SnowGlobeAPI(WebServer):
                 "rowset": [],
                 "queryId": query_id,
             }
-            if not result:
-                return JSONResponse({'data': data, 'success': True})
             if body.get('asyncExec', False):
                 # we should store the result in the server for when it gets retrieved
                 self.query_results[query_id] = result
+            if not result:
+                return JSONResponse({'data': data, 'success': True})
             data.update(self.sql_alchemy_result_to_snowglobe_result(result, session.known_columns))
             return JSONResponse({'data': data, 'success': True})
         except Exception as e:
