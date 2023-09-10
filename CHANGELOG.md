@@ -1,4 +1,7 @@
 # Yellowbox Snowglobe Changelog
+## 0.2.3
+### Fixed
+* bug for empty queries when using async execute
 ## 0.2.2
 ### Fixed
 * SnowType converter now supports None as well
