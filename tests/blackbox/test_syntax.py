@@ -66,9 +66,6 @@ def test_sample_query(connection, queried_sample, expected_sample):
 
 def test_json(connection, db):
     connection.cursor().execute('create table bar (x int, y json)')
-    insertcode = '''
-        insert into bar values (1, '{"a":"1", "b":"1"}'), (2, '{"a":"2", "b":"2"}')
-    '''
-    connection.cursor().execute(insertcode)
+    connection.cursor().execute('''insert into bar values (1, '{"a":"1", "b":"1"}'), (2, '{"a":"2", "b":"2"}')''')
     res = connection.cursor().execute("select x, y:a from bar;").fetchall()
     assert res == [(1, '1'), (2, '2')]
