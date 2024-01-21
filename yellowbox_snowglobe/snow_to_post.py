@@ -106,6 +106,10 @@ RULES = [
     Rule(re.compile(r"(?ix)\b"
                     r"(" + NAME_PATTERN + r")\.\.(" + NAME_PATTERN + ")"
                     + r"\b"), replacement=r"\1.public.\2"),
+    # json query
+    Rule(re.compile(r"(?ix)\b"
+                    r"(" + NAME_PATTERN + r"):(" + NAME_PATTERN + ")"
+                    + r"\b"), replacement=r"\1->>'\2'"),
     # show schemas
     Rule(re.compile(r"(?i)show\s+schemas"),
          "select null as created_on, schema_name as name, null as is_default, null as is_current, "
