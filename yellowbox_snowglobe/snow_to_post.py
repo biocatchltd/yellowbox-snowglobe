@@ -106,10 +106,17 @@ RULES = [
     Rule(re.compile(r"(?ix)\b"
                     r"(" + NAME_PATTERN + r")\.\.(" + NAME_PATTERN + ")"
                     + r"\b"), replacement=r"\1.public.\2"),
-    # json query
+
+    # json query int
     Rule(re.compile(r"(?ix)\b"
-                    r"(" + NAME_PATTERN + r"):(" + NAME_PATTERN + ")"
+                    r"(" + NAME_PATTERN + r"):(" + NAME_PATTERN + ")" + "::varchar"
                     + r"\b"), replacement=r"\1->>'\2'"),
+
+    # json query string
+    Rule(re.compile(r"(?ix)\b"
+                    r"(" + NAME_PATTERN + r"):(" + NAME_PATTERN + ")" + "::number"
+                    + r"\b"), replacement=r"cast(\1->>'\2' as integer)"),
+
     # show schemas
     Rule(re.compile(r"(?i)show\s+schemas"),
          "select null as created_on, schema_name as name, null as is_default, null as is_current, "

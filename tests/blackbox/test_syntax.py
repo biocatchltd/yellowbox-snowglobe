@@ -64,8 +64,12 @@ def test_sample_query(connection, queried_sample, expected_sample):
     assert len(res) == expected_sample
 
 
-def test_json(connection, db):
+@mark.parametrize('query,expected', [
+    ('select x, y:a::varchar from bar;', [(1, '1'), (2, '2')]),
+    ('select x, y:a::number from bar;', [(1, 1), (2, 2)]),
+])
+def test_json_cast(connection, db, query, expected):
     connection.cursor().execute('create table bar (x int, y json)')
     connection.cursor().execute('''insert into bar values (1, '{"a":"1", "b":"1"}'), (2, '{"a":"2", "b":"2"}')''')
-    res = connection.cursor().execute("select x, y:a from bar;").fetchall()
-    assert res == [(1, '1'), (2, '2')]
+    res = connection.cursor().execute(query).fetchall()
+    assert res == expected
