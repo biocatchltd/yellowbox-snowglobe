@@ -68,7 +68,7 @@ def test_sample_query(connection, queried_sample, expected_sample):
     ('select x, y:a::varchar from bar;', [(1, '1'), (2, '2')]),
     ('select x, y:a::number from bar;', [(1, 1), (2, 2)]),
 ])
-def test_json_cast(connection, db, query, expected):
+def test_json(connection, db, query, expected):
     connection.cursor().execute('create table bar (x int, y json)')
     connection.cursor().execute('''insert into bar values (1, '{"a":"1", "b":"1"}'), (2, '{"a":"2", "b":"2"}')''')
     res = connection.cursor().execute(query).fetchall()

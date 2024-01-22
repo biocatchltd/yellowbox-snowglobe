@@ -107,12 +107,12 @@ RULES = [
                     r"(" + NAME_PATTERN + r")\.\.(" + NAME_PATTERN + ")"
                     + r"\b"), replacement=r"\1.public.\2"),
 
-    # json query int
+    # json query string
     Rule(re.compile(r"(?ix)\b"
                     r"(" + NAME_PATTERN + r"):(" + NAME_PATTERN + ")" + "::varchar"
                     + r"\b"), replacement=r"\1->>'\2'"),
 
-    # json query string
+    # json query int
     Rule(re.compile(r"(?ix)\b"
                     r"(" + NAME_PATTERN + r"):(" + NAME_PATTERN + ")" + "::number"
                     + r"\b"), replacement=r"cast(\1->>'\2' as integer)"),
