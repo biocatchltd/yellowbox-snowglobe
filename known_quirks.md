@@ -24,3 +24,6 @@
   * all stored async results are cleared when retrieved, this means that each async result can only
     be retrieved once.
 * from all the timestamp types in snowflake, only TIMESTAMP_NTZ is currently supported.
+* 'Json Queries'
+  * Supports querying json data using {Column_Name}.{Json_Key}::Number and {Column_Name}.{Json_Key}::String syntax.
+  * Nested json lookups are not supported.
