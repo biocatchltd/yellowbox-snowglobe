@@ -1,4 +1,7 @@
 # Yellowbox Snowglobe Changelog
+## 0.2.4
+### Added
+* added support for json queries
 ## 0.2.3
 ### Fixed
 * bug for empty queries when using async execute
