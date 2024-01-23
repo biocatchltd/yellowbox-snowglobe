@@ -65,7 +65,7 @@ def test_sample_query(connection, queried_sample, expected_sample):
 
 
 @mark.parametrize('query,expected', [
-    ('select x, y:a::varchar from bar;', [(1, '1'), (2, '2')]),
+    ('select x, y:a::string from bar;', [(1, '1'), (2, '2')]),
     ('select x, y:a::number from bar;', [(1, 1), (2, 2)]),
 ])
 def test_json(connection, db, query, expected):

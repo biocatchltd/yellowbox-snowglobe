@@ -109,7 +109,7 @@ RULES = [
 
     # json query string
     Rule(re.compile(r"(?ix)\b"
-                    r"(" + NAME_PATTERN + r"):(" + NAME_PATTERN + ")" + "::varchar"
+                    r"(" + NAME_PATTERN + r"):(" + NAME_PATTERN + ")" + "::string"
                     + r"\b"), replacement=r"\1->>'\2'"),
 
     # json query int
