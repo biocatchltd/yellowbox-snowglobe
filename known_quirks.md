@@ -25,5 +25,5 @@
     be retrieved once.
 * from all the timestamp types in snowflake, only TIMESTAMP_NTZ is currently supported.
 * 'Json Queries'
-  * Supports querying json data using {Column_Name}.{Json_Key}::Number and {Column_Name}.{Json_Key}::String syntax.
+  * Supports querying json data using {Column_Name}.{Json_Key}::number and {Column_Name}.{Json_Key}::string syntax.
   * Nested json lookups are not supported.
