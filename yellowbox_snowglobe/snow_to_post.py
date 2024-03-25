@@ -44,15 +44,15 @@ def split_sql_to_statements(query: str) -> Iterator[str]:
             buffer.append(part.value)
             continue
         while True:
-            sep_index = part.find(';')
+            sep_index = part.find(";")
             if sep_index == -1:
                 buffer.append(part)
                 break
             buffer.append(part[:sep_index])
-            yield ''.join(buffer)
+            yield "".join(buffer)
             buffer.clear()
             part = part[sep_index + 1:]
-    last_bit = ''.join(buffer)
+    last_bit = "".join(buffer)
     if last_bit:
         yield last_bit
 
@@ -87,13 +87,13 @@ PRE_SPLIT_RULES = [
 
 RULES = [
     # commit/rollback
-    Rule(re.compile(r"(?i)^(commit|rollback)"), r'!\1'),
+    Rule(re.compile(r"(?i)^(commit|rollback)"), r"!\1"),
     # use database
-    Rule(re.compile(r"(?i)use(\s+database)?\s+(" + NAME_PATTERN + r")"), r'!switch_db \2'),
+    Rule(re.compile(r"(?i)use(\s+database)?\s+(" + NAME_PATTERN + r")"), r"!switch_db \2"),
     # use schema
-    Rule(re.compile(r"(?i)use\s+schema\s+(" + NAME_PATTERN + r")"), r'SET search_path TO \1;!set_schema \1'),
+    Rule(re.compile(r"(?i)use\s+schema\s+(" + NAME_PATTERN + r")"), r"SET search_path TO \1;!set_schema \1"),
     Rule(re.compile(r"(?i)use(\s+schema)?\s+(" + NAME_PATTERN + r")\.(" + NAME_PATTERN + r")$"),
-         r'USE DATABASE \2;use schema \3'),
+         r"USE DATABASE \2;use schema \3"),
     # flatten(?) as ?
     Rule(re.compile(r"(?ix)\b"
                     r"flatten\("
@@ -146,7 +146,7 @@ def repl_part(part: Union[str, TextLiteral], rules: Iterable[Rule]) -> str:
     ret_parts = []
     while part:
         best_match = None
-        best_match_key = (float('inf'), 0)  # matches are ranked by position (shorter is better),
+        best_match_key = (float("inf"), 0)  # matches are ranked by position (shorter is better),
         # then by length (longer is better, stored as negative)
         for rule in rules:
             match = rule.pattern.search(part)
@@ -162,9 +162,9 @@ def repl_part(part: Union[str, TextLiteral], rules: Iterable[Rule]) -> str:
         else:
             ret_parts.append(part)
             break
-    return ''.join(ret_parts)
+    return "".join(ret_parts)
 
 
 def snow_to_post(query: str) -> str:
     query = repl_part(query, PRE_SPLIT_RULES)
-    return ''.join(repl_part(part, RULES) for part in split_literals(query))
+    return "".join(repl_part(part, RULES) for part in split_literals(query))
