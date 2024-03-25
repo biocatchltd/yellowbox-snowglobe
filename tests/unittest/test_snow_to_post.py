@@ -1,5 +1,7 @@
 import pytest
 
+from typing import List
+
 from yellowbox_snowglobe.snow_to_post import TextLiteral, snow_to_post, split_literals, split_sql_to_statements
 
 
@@ -43,7 +45,7 @@ def test_snow_to_post(snow: str, post: str):
         ("a'b;c''d;e';f", ["a", TextLiteral("'b;c''d;e'"), ";f"]),
     ],
 )
-def test_split_literals(joined: str, split: list[str]):
+def test_split_literals(joined: str, split: List[str]):
     assert list(split_literals(joined)) == split
 
 
@@ -58,5 +60,5 @@ def test_split_literals(joined: str, split: list[str]):
         ("a'b;c''d;e';f", ["a'b;c''d;e'", "f"]),
     ],
 )
-def test_split_statements(joined: str, split: list[str]):
+def test_split_statements(joined: str, split: List[str]):
     assert list(split_sql_to_statements(joined)) == split
