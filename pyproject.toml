@@ -39,6 +39,7 @@ lint.ignore = [
     "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
     "S101",  # assert detected
     "S608", # Possible SQL injection vector through string-based query construction
+    "SIM117", # Nested `with`
     "T201", # `print` found
     "ISC001",  # Implicitly concatenated string literals on one line
 ]
