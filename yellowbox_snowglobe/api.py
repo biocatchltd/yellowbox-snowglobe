@@ -5,7 +5,7 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from traceback import print_exc
-from typing import Any, Callable, Container, Dict, List, Optional, Sequence
+from typing import Any, Callable, Container, Dict, Optional, Sequence
 from uuid import uuid4
 
 from sqlalchemy.engine import Row
@@ -62,7 +62,7 @@ class SnowGlobeAPI(WebServer):
         self.query_results: Dict[str, Sequence[Row] | None] = {}  # stores all the async query results
 
     def sql_alchemy_result_to_snowglobe_result(
-        self, result: List[Row], known_columns: Container[str]
+        self, result: Sequence[Row], known_columns: Container[str]
     ) -> Dict[str, Any]:
         col_names = result[0]._fields
         columns = [
@@ -149,7 +149,7 @@ class SnowGlobeAPI(WebServer):
             for stmt in stmts:
                 result = session.do_query(stmt)
             query_id = str(uuid4())
-            data = {
+            data: dict = {
                 "finalDatabaseName": session.db,
                 "finalSchemaName": session.schema,
                 "rowtype": [],

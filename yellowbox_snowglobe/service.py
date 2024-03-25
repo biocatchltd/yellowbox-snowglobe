@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from yellowbox import AsyncRunMixin, RunMixin, YellowService
 from yellowbox.extras.postgresql import PostgreSQLService
 from yellowbox.utils import docker_host_name
@@ -26,7 +28,7 @@ class SnowGlobeService(YellowService, RunMixin, AsyncRunMixin):
         self.api.start()
         return self
 
-    async def astart(self, *args, **kwargs) -> SnowGlobeService:
+    async def astart(self, *args, **kwargs) -> Any:
         await self.sql_service.astart(*args, **kwargs)
         self.api.start()
         return self
