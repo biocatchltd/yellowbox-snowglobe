@@ -46,7 +46,7 @@ class SnowGlobeSession:
             raise Exception("No connection exists, make sure to use a database first")
         return self._transaction
 
-    def switch_db(self, db_name: str, schema_name: str = 'public'):
+    def switch_db(self, db_name: str, schema_name: str = "public"):
         if self.db == db_name:
             return
         if self.engine:
@@ -65,12 +65,16 @@ class SnowGlobeSession:
         """
         with self.connection.begin_nested():
             # right now, the only indicator of initialization is the presence of the metadata table
-            exists = self.connection.execute(text(f"SELECT EXISTS(SELECT FROM information_schema.tables"
-                                                  f" WHERE  table_schema = '{self.schema}'"
-                                                  f" AND table_name = '{self.owner.metadata_table_name}')")).scalar()
+            exists = self.connection.execute(
+                text(
+                    f"SELECT EXISTS(SELECT FROM information_schema.tables"
+                    f" WHERE  table_schema = '{self.schema}'"
+                    f" AND table_name = '{self.owner.metadata_table_name}')"
+                )
+            ).scalar()
             if exists:
                 return
-            self.connection.execute(text(f'SET search_path TO {self.schema};'))
+            self.connection.execute(text(f"SET search_path TO {self.schema};"))
             self.connection.execute(SCHEMA_INITIALIZE_SCRIPT)
             self.connection.execute(text(f"CREATE TABLE IF NOT EXISTS {self.owner.metadata_table_name}()"))
 
@@ -90,47 +94,49 @@ class SnowGlobeSession:
         return prefix_search_root(self, query)
 
     # region handlers
-    def _do_ignore(self, query) -> QUERY_RESPONSE:
+    def _do_ignore(self, query: str) -> QUERY_RESPONSE:
         return None
 
-    def _do_commit(self, query) -> QUERY_RESPONSE:
+    def _do_commit(self, query: str) -> QUERY_RESPONSE:
         self.transaction.commit()
         return None
 
-    def _do_rollback(self, query) -> QUERY_RESPONSE:
+    def _do_rollback(self, query: str) -> QUERY_RESPONSE:
         self.transaction.rollback()
         return None
 
-    def _do_use_database(self, query) -> QUERY_RESPONSE:
+    def _do_use_database(self, query: str) -> QUERY_RESPONSE:
         _, _, db_name = query.rpartition(" ")
         self.switch_db(db_name)
         return None
 
-    def _do_set_schema(self, query) -> QUERY_RESPONSE:
+    def _do_set_schema(self, query: str) -> QUERY_RESPONSE:
         _, _, schema_name = query.rpartition(" ")
         # todo assert the schema exists
         self.schema = schema_name
         self._initialize_schema()
         return None
 
-    def _do_retrieve(self, query) -> QUERY_RESPONSE:
+    def _do_retrieve(self, query: str) -> QUERY_RESPONSE:
         _, _, query_id = query.rpartition(" ")
         res = self.owner.query_results.pop(query_id, None)
         if res is None:
             return None  # todo some better handling here?
         return res
 
-    def _do_select(self, query) -> QUERY_RESPONSE:
+    def _do_select(self, query: str) -> QUERY_RESPONSE:
         result = self.connection.execute(text(query)).all()
         return result
 
-    def _do_mutating_noresponse(self, query) -> QUERY_RESPONSE:
+    def _do_mutating_noresponse(self, query: str) -> QUERY_RESPONSE:
         self.connection.execute(text(query))
         # we need to update the known columns here
-        result = self.connection.execute(text(
-            "select column_name from information_schema.columns c where c.table_schema <> 'pg_catalog'"
-            "AND c.table_schema <> 'information_schema';"
-        ))
+        result = self.connection.execute(
+            text(
+                "select column_name from information_schema.columns c where c.table_schema <> 'pg_catalog'"
+                "AND c.table_schema <> 'information_schema';"
+            )
+        )
         self.known_columns = set(result.scalars().fetchall())
         return None
 
@@ -148,7 +154,7 @@ class SnowGlobeSession:
         "select": _do_select,
         "insert": _do_mutating_noresponse,
         "create": {
-            'database': _do_ignore,
+            "database": _do_ignore,
             None: _do_mutating_noresponse,
         },
         "set": _do_mutating_noresponse,
@@ -163,5 +169,6 @@ class SnowGlobeSession:
         if self.engine:
             self.connection.close()
             self.engine.dispose()
+
 
 # todo data types

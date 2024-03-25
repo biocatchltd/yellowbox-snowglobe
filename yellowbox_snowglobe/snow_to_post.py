@@ -32,8 +32,8 @@ def split_literals(query: str) -> Iterator[Union[str, TextLiteral]]:
                 break
             search_start = terminator_ind + 2
         yield query[:next_str_ind]
-        yield TextLiteral(query[next_str_ind:terminator_ind + 1])
-        query = query[terminator_ind + 1:]
+        yield TextLiteral(query[next_str_ind : terminator_ind + 1])
+        query = query[terminator_ind + 1 :]
 
 
 def split_sql_to_statements(query: str) -> Iterator[str]:
@@ -51,7 +51,7 @@ def split_sql_to_statements(query: str) -> Iterator[str]:
             buffer.append(part[:sep_index])
             yield "".join(buffer)
             buffer.clear()
-            part = part[sep_index + 1:]
+            part = part[sep_index + 1 :]
     last_bit = "".join(buffer)
     if last_bit:
         yield last_bit
@@ -81,8 +81,7 @@ NAME_PATTERN = r"[a-z][a-z0-9_]*"
 # always want to add a "^" to the beginning of the pattern)
 PRE_SPLIT_RULES = [
     # retrieved stored asynchronous result
-    Rule(re.compile(r"(?i)^select\s+\*\s+from\s+table\(result_scan\('([a-f0-9-]+)'\)\)"),
-         r"!retrieve \1"),
+    Rule(re.compile(r"(?i)^select\s+\*\s+from\s+table\(result_scan\('([a-f0-9-]+)'\)\)"), r"!retrieve \1"),
 ]
 
 RULES = [
@@ -92,49 +91,53 @@ RULES = [
     Rule(re.compile(r"(?i)use(\s+database)?\s+(" + NAME_PATTERN + r")"), r"!switch_db \2"),
     # use schema
     Rule(re.compile(r"(?i)use\s+schema\s+(" + NAME_PATTERN + r")"), r"SET search_path TO \1;!set_schema \1"),
-    Rule(re.compile(r"(?i)use(\s+schema)?\s+(" + NAME_PATTERN + r")\.(" + NAME_PATTERN + r")$"),
-         r"USE DATABASE \2;use schema \3"),
+    Rule(
+        re.compile(r"(?i)use(\s+schema)?\s+(" + NAME_PATTERN + r")\.(" + NAME_PATTERN + r")$"),
+        r"USE DATABASE \2;use schema \3",
+    ),
     # flatten(?) as ?
-    Rule(re.compile(r"(?ix)\b"
-                    r"flatten\("
-                    r"("
-                    + OBJ_PATTERN
-                    + ")"
-                      r"\)\s+as\s+"
-                      r"(" + NAME_PATTERN + r")\b"), replacement=r"unnest(\1) as \2(value)"),
+    Rule(
+        re.compile(r"(?ix)\b" r"flatten\(" r"(" + OBJ_PATTERN + ")" r"\)\s+as\s+" r"(" + NAME_PATTERN + r")\b"),
+        replacement=r"unnest(\1) as \2(value)",
+    ),
     # db..table
-    Rule(re.compile(r"(?ix)\b"
-                    r"(" + NAME_PATTERN + r")\.\.(" + NAME_PATTERN + ")"
-                    + r"\b"), replacement=r"\1.public.\2"),
-
+    Rule(
+        re.compile(r"(?ix)\b" r"(" + NAME_PATTERN + r")\.\.(" + NAME_PATTERN + ")" + r"\b"), replacement=r"\1.public.\2"
+    ),
     # json query string
-    Rule(re.compile(r"(?ix)\b"
-                    r"(" + NAME_PATTERN + r"):(" + NAME_PATTERN + ")" + "::string"
-                    + r"\b"), replacement=r"\1->>'\2'"),
-
+    Rule(
+        re.compile(r"(?ix)\b" r"(" + NAME_PATTERN + r"):(" + NAME_PATTERN + ")" + "::string" + r"\b"),
+        replacement=r"\1->>'\2'",
+    ),
     # json query int
-    Rule(re.compile(r"(?ix)\b"
-                    r"(" + NAME_PATTERN + r"):(" + NAME_PATTERN + ")" + "::number"
-                    + r"\b"), replacement=r"cast(\1->>'\2' as integer)"),
-
+    Rule(
+        re.compile(r"(?ix)\b" r"(" + NAME_PATTERN + r"):(" + NAME_PATTERN + ")" + "::number" + r"\b"),
+        replacement=r"cast(\1->>'\2' as integer)",
+    ),
     # show schemas
-    Rule(re.compile(r"(?i)show\s+schemas"),
-         "select null as created_on, schema_name as name, null as is_default, null as is_current, "
-         "null as database_name, null as owner, null as comment, null as options, null as retention_time "
-         "FROM information_schema.schemata"),
+    Rule(
+        re.compile(r"(?i)show\s+schemas"),
+        "select null as created_on, schema_name as name, null as is_default, null as is_current, "
+        "null as database_name, null as owner, null as comment, null as options, null as retention_time "
+        "FROM information_schema.schemata",
+    ),
     # show tables
-    Rule(re.compile(r"(?i)show\s+tables"),
-         "select null as created_on, table_name as name, table_catalog as database_name, table_schema as schema_name,"
-         " 'TABLE' as kind, NULL as comment, NULL as cluster_by, NULL as rows, NULL as bytes, NULL as owner,"
-         " NULL as retention_time, NULL as change_tracking, NULL as search_optimization,"
-         " NULL as search_optimization_progress, NULL as search_optimization_bytes, NULL as is_external"
-         " FROM information_schema.tables WHERE table_type = 'BASE TABLE'"),
+    Rule(
+        re.compile(r"(?i)show\s+tables"),
+        "select null as created_on, table_name as name, table_catalog as database_name, table_schema as schema_name,"
+        " 'TABLE' as kind, NULL as comment, NULL as cluster_by, NULL as rows, NULL as bytes, NULL as owner,"
+        " NULL as retention_time, NULL as change_tracking, NULL as search_optimization,"
+        " NULL as search_optimization_progress, NULL as search_optimization_bytes, NULL as is_external"
+        " FROM information_schema.tables WHERE table_type = 'BASE TABLE'",
+    ),
     # describe table
-    Rule(re.compile(r"(?i)(describe|desc)\s+table\s+(" + NAME_PATTERN + r")"),
-         "SELECT column_name as name, data_type as type, 'COLUMN' as kind, is_nullable as \"null?\","
-         " column_default as default, NULL as primary_key, NULL as unique_key, NULL as check,"
-         " NULL as expression, NULL as comment, NULL as \"policy name\" FROM information_schema.columns"
-         r" WHERE table_name = '\2'"),
+    Rule(
+        re.compile(r"(?i)(describe|desc)\s+table\s+(" + NAME_PATTERN + r")"),
+        "SELECT column_name as name, data_type as type, 'COLUMN' as kind, is_nullable as \"null?\","
+        " column_default as default, NULL as primary_key, NULL as unique_key, NULL as check,"
+        ' NULL as expression, NULL as comment, NULL as "policy name" FROM information_schema.columns'
+        r" WHERE table_name = '\2'",
+    ),
     # Ignore sample in queries
     Rule(re.compile(r"(?i)\bsample\s+\(([0-9\.]+)\s+rows\)"), replacement=r"order by random() limit \1"),
 ]
@@ -157,8 +160,8 @@ def repl_part(part: Union[str, TextLiteral], rules: Iterable[Rule]) -> str:
                     best_match_key = match_key
         if best_match:
             rule, match = best_match
-            ret_parts.append(part[:match.start()])
-            part = match.expand(rule.replacement) + part[match.end():]
+            ret_parts.append(part[: match.start()])
+            part = match.expand(rule.replacement) + part[match.end() :]
         else:
             ret_parts.append(part)
             break
