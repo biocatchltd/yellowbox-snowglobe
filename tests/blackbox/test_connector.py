@@ -62,7 +62,7 @@ def test_create_and_switch_db(db, snowglobe):
             cursor.execute("create table bar (x int, y text)")
             cursor.execute("insert into bar values (1, 'one'), (2, 'two'), (3, 'three'), (10, 'ten')")
             cursor.execute("select x, y from bar where x = %s", (10,))
-        assert cursor.fetchall() == [(10, "ten")]
+            assert cursor.fetchall() == [(10, "ten")]
 
     assert snowglobe.sql_service.database_exists(new_db_name)
 
