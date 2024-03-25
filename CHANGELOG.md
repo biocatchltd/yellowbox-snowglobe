@@ -1,4 +1,7 @@
 # Yellowbox Snowglobe Changelog
+## 0.2.5
+### Internal
+* linting changed to ruff
 ## 0.2.4
 ### Added
 * added support for json queries
