@@ -5,7 +5,7 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from traceback import print_exc
-from typing import Any, Callable, Container, Dict, List, Optional, Sequence
+from typing import Any, Callable, Container, Dict, Optional, Sequence
 from uuid import uuid4
 
 from sqlalchemy.engine import Row
@@ -20,7 +20,7 @@ from yellowbox_snowglobe.session import SnowGlobeSession
 from yellowbox_snowglobe.snow_to_post import snow_to_post, split_sql_to_statements
 
 
-async def unpack_request_body(request: Request):
+async def unpack_request_body(request: Request) -> dict:
     body = await request.body()
     uz = gzip.decompress(body)
     return json.loads(uz)
@@ -31,6 +31,7 @@ class SnowType:
     """
     A column type that can be returned to the connector
     """
+
     name: str
     connector_converter: Optional[Callable[[Any], Any]] = None
     """
@@ -39,19 +40,19 @@ class SnowType:
 
 
 PY_TYPE_TO_SNOW_TYPE = {
-    int: SnowType('NUMBER'),
-    str: SnowType('TEXT'),
-    float: SnowType('FLOAT'),
-    bool: SnowType('BOOLEAN', lambda x: str(int(x))),
-    datetime: SnowType('TIMESTAMP_NTZ', lambda x: str(x.replace(tzinfo=timezone.utc).timestamp()))
+    int: SnowType("NUMBER"),
+    str: SnowType("TEXT"),
+    float: SnowType("FLOAT"),
+    bool: SnowType("BOOLEAN", lambda x: str(int(x))),
+    datetime: SnowType("TIMESTAMP_NTZ", lambda x: str(x.replace(tzinfo=timezone.utc).timestamp())),
 }  # todo there are a lot more
 
-OBJECT = SnowType('OBJECT')  # this will be the default snow type for when we can't handle the result type
+OBJECT = SnowType("OBJECT")  # this will be the default snow type for when we can't handle the result type
 
 
 class SnowGlobeAPI(WebServer):
     def __init__(self, *args, sql_service: PostgreSQLService, metadata_table_name: str, case_mode: CaseMode, **kwargs):
-        super().__init__('snowglobe', *args, **kwargs)
+        super().__init__("snowglobe", *args, **kwargs)
         self.sql_service = sql_service
         self.case_mode = case_mode
 
@@ -60,17 +61,26 @@ class SnowGlobeAPI(WebServer):
 
         self.query_results: Dict[str, Sequence[Row] | None] = {}  # stores all the async query results
 
-    def sql_alchemy_result_to_snowglobe_result(self, result: List[Row], known_columns: Container[str])\
-            -> Dict[str, Any]:
+    def sql_alchemy_result_to_snowglobe_result(
+        self, result: Sequence[Row], known_columns: Container[str]
+    ) -> Dict[str, Any]:
         col_names = result[0]._fields
-        columns = [{'name': self.case_mode.convert(col_name, known_columns), "length": 0, "precision": 0, "scale": 0,
-                    "nullable": False} for col_name in col_names]
+        columns = [
+            {
+                "name": self.case_mode.convert(col_name, known_columns),
+                "length": 0,
+                "precision": 0,
+                "scale": 0,
+                "nullable": False,
+            }
+            for col_name in col_names
+        ]
         rows = [list(row) for row in result]
         for i, col in enumerate(columns):
             t = None
             for row in rows:
                 if row[i] is None:
-                    col['nullable'] = True
+                    col["nullable"] = True
                 else:
                     proposed_type = PY_TYPE_TO_SNOW_TYPE.get(type(row[i]))
                     if proposed_type is None:
@@ -85,85 +95,83 @@ class SnowGlobeAPI(WebServer):
                 # if no type was found, we default the column type to variant, AFAICT this will only happen for a result
                 # without rows
                 t = OBJECT
-            col['type'] = t.name
+            col["type"] = t.name
             if t.connector_converter is not None:
                 for row in rows:
                     row[i] = t.connector_converter(row[i]) if row[i] is not None else None
-        return {'rowtype': columns, 'rowset': rows}
+        return {"rowtype": columns, "rowset": rows}
 
-    def session_from_request(self, request):
+    def session_from_request(self, request: Request) -> SnowGlobeSession:
         """
         Get a request's relevant session
         """
-        auth = request.headers.get('Authorization')
+        auth = request.headers.get("Authorization")
         if not auth:
-            raise HTTPException(status_code=401, detail='No Authorization header')
+            raise HTTPException(status_code=401, detail="No Authorization header")
         if not auth.startswith('Snowflake Token="'):
-            raise HTTPException(status_code=401, detail='Invalid Authorization header')
+            raise HTTPException(status_code=401, detail="Invalid Authorization header")
         token = auth[17:-1]
         if token not in self.sessions:
-            raise HTTPException(status_code=401, detail='Invalid Authorization header')
+            raise HTTPException(status_code=401, detail="Invalid Authorization header")
         return self.sessions[token]
 
-    @class_http_endpoint(['POST'], '/session/v1/login-request')  # type: ignore[arg-type]
-    async def login_request(self, request: Request):
-        db = request.query_params.get('databaseName')
-        schema = request.query_params.get('schemaName', 'public')
+    @class_http_endpoint(["POST"], "/session/v1/login-request")  # type: ignore[arg-type]
+    async def login_request(self, request: Request) -> JSONResponse:
+        db = request.query_params.get("databaseName")
+        schema = request.query_params.get("schemaName", "public")
         session = SnowGlobeSession(self, db, schema)
         self.sessions[session.token] = session
-        return JSONResponse({'data': {'token': session.token, 'masterToken': 'SwordFish'}, 'success': True})
+        return JSONResponse({"data": {"token": session.token, "masterToken": "SwordFish"}, "success": True})
 
-    @class_http_endpoint(['POST'], '/session')  # type: ignore[arg-type]
-    async def delete_session(self, request: Request):
-        if request.query_params.get('delete') == 'true':
+    @class_http_endpoint(["POST"], "/session")  # type: ignore[arg-type]
+    async def delete_session(self, request: Request) -> JSONResponse | Response:
+        if request.query_params.get("delete") == "true":
             session = self.session_from_request(request)
             del self.sessions[session.token]
             session.close()
-            return JSONResponse({'success': True})
+            return JSONResponse({"success": True})
         return Response(status_code=404)
 
-    @class_http_endpoint(['POST'], '/queries/v1/query-request')  # type: ignore[arg-type]
-    async def query_request(self, request: Request):
+    @class_http_endpoint(["POST"], "/queries/v1/query-request")  # type: ignore[arg-type]
+    async def query_request(self, request: Request) -> JSONResponse:
         try:
             session = self.session_from_request(request)
             body = await unpack_request_body(request)
-            query = body['sqlText']
-            if query.endswith(';'):
+            query = body["sqlText"]
+            if query.endswith(";"):
                 query = query[:-1]
             post = snow_to_post(query)  # note that this query might well now have multiple statements, but only the
             # last one counts
             stmts = list(split_sql_to_statements(post))
             if not stmts:
-                return JSONResponse({'success': False, 'message': 'no query provided'})
+                return JSONResponse({"success": False, "message": "no query provided"})
             result = None
             for stmt in stmts:
                 result = session.do_query(stmt)
             query_id = str(uuid4())
-            data = {
-                'finalDatabaseName': session.db,
-                'finalSchemaName': session.schema,
+            data: dict = {
+                "finalDatabaseName": session.db,
+                "finalSchemaName": session.schema,
                 "rowtype": [],
                 "rowset": [],
                 "queryId": query_id,
             }
-            if body.get('asyncExec', False):
+            if body.get("asyncExec", False):
                 # we should store the result in the server for when it gets retrieved
                 self.query_results[query_id] = result
             if not result:
-                return JSONResponse({'data': data, 'success': True})
+                return JSONResponse({"data": data, "success": True})
             data.update(self.sql_alchemy_result_to_snowglobe_result(result, session.known_columns))
-            return JSONResponse({'data': data, 'success': True})
+            return JSONResponse({"data": data, "success": True})
         except Exception as e:
             print_exc()  # we print exec here because the connector + webservice combo doesn't always do a good job of
             # telling us what the error is (or that it's happening)
-            return JSONResponse({'success': False, 'message': str(e)})
+            return JSONResponse({"success": False, "message": str(e)})
 
-    @class_http_endpoint(['GET'], '/monitoring/queries/{query_id:str}')  # type: ignore[arg-type]
-    async def query_monitoring_query(self, request: Request):
-        query_id = request.path_params['query_id']
+    @class_http_endpoint(["GET"], "/monitoring/queries/{query_id:str}")  # type: ignore[arg-type]
+    async def query_monitoring_query(self, request: Request) -> JSONResponse:
+        query_id = request.path_params["query_id"]
         if query_id not in self.query_results:
-            return JSONResponse({'success': False, 'message': 'query not found'})
+            return JSONResponse({"success": False, "message": "query not found"})
         # note that we always execute synchronously, so we can just return a static success
-        return JSONResponse({'data': {
-            'queries': [{"status": 'SUCCESS'}]
-        }, 'success': True})
+        return JSONResponse({"data": {"queries": [{"status": "SUCCESS"}]}, "success": True})

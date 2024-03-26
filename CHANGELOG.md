@@ -1,4 +1,8 @@
 # Yellowbox Snowglobe Changelog
+## Next
+### Internal
+* linting changed to ruff
+* github workflows updated actions to avoid node deprecation warning
 ## 0.2.4
 ### Added
 * added support for json queries

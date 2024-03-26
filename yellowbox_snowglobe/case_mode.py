@@ -40,6 +40,7 @@ class AutoCase(CaseMode):
     """
     Will dynamically fetch all column names from the database and convert them to uppercase
     """
+
     force_ignore: Container[str] = ()
     """
     These column names will not be changed even if they appear in the database

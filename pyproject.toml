@@ -12,12 +12,55 @@ yellowbox = { version = ">=0.7.0", extras = ["postgresql", "webserver"] }
 [tool.poetry.dev-dependencies]
 pytest = "*"
 pytest-asyncio = "*"
-flake8 = "*"
 pytest-cov = "*"
-isort = "^5.10.1"
 mypy = ">=1"
 snowflake-connector-python = "^3.0.1"
+ruff = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+# https://beta.ruff.rs/docs/rules/
+lint.select = ["I", "E", "W", "F", "N", "S", "BLE", "COM", "C4", "ISC", "ICN", "G", "PIE", "T20", "PYI", "Q", "SLF", "SIM",
+          "ERA", "PGH", "PLC", "PLE", "PLR", "PLW", "RUF", "PT", "B", "ANN", "ASYNC", "FBT003", "A", "INP",
+          "SLOT", "TID", "PTH", "FLY", "PERF"]
+# should be included later: RET?, ARG, TRY, DTZ?, FA, RSE?, TCH?
+lint.ignore = [
+    "ANN002", # Missing type annotation for `*args`
+    "ANN003", # Missing type annotation for `**kwargs`
+    "ANN101",  # Missing type annotation for self in method
+    "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
+    "B008",  # do not perform function calls in argument defaults
+    "BLE001", # Do not catch blind exception: `Exception`
+    "COM812",  # trailing comma, handled by black
+    "PLW2901", # `for` loop variable `X` overwritten by assignment target
+    "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
+    "S101",  # assert detected
+    "S608", # Possible SQL injection vector through string-based query construction
+    "SIM117", # Nested `with`
+    "T201", # `print` found
+    "ISC001",  # Implicitly concatenated string literals on one line
+]
+line-length = 120
+output-format = "full"
+
+[tool.ruff.lint.isort]
+combine-as-imports=true
+
+[tool.ruff.lint.flake8-annotations]
+suppress-none-returning = true
+
+[tool.ruff.lint.flake8-pytest-style]
+raises-require-match-for = []
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = [
+    "ANN001", # Missing type annotation for function argument
+    "ANN201", # Missing return type annotation
+    "INP001", # implicit namespace package
+    "PLW0603", # Using the global statement ... is discouraged
+    "PT012", # `pytest.raises()` block should contain a single simple statement
+    "PT013", # incorrect import of pytest
+]

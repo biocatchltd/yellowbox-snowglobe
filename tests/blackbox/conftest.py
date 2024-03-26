@@ -1,5 +1,5 @@
-import snowflake.connector as connector
 from pytest import fixture
+from snowflake import connector
 
 from yellowbox_snowglobe.service import SnowGlobeService
 
@@ -13,14 +13,14 @@ def snowglobe(docker_client) -> SnowGlobeService:
 next_db = 0
 
 
-@fixture
+@fixture()
 def db():
     global next_db
     next_db += 1
-    return f'db_{next_db}'
+    return f"db_{next_db}"
 
 
-@fixture
+@fixture()
 def connection(snowglobe: SnowGlobeService, db):
     with connector.connect(**snowglobe.local_connection_kwargs(), database=db) as conn:
         yield conn
