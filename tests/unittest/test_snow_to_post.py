@@ -1,6 +1,6 @@
-import pytest
-
 from typing import List
+
+import pytest
 
 from yellowbox_snowglobe.snow_to_post import TextLiteral, snow_to_post, split_literals, split_sql_to_statements
 
