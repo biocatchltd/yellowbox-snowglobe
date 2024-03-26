@@ -36,6 +36,7 @@ lint.ignore = [
     "BLE001", # Do not catch blind exception: `Exception`
     "COM812",  # trailing comma, handled by black
     "PLW2901", # `for` loop variable `X` overwritten by assignment target
+    "PT013", # incorrect import of pytest
     "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
     "S101",  # assert detected
     "S608", # Possible SQL injection vector through string-based query construction
