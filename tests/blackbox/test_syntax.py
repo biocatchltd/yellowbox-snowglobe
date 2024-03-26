@@ -1,6 +1,6 @@
 from datetime import datetime
 
-import pytest
+from pytest import mark
 
 
 def test_double_dot(connection, db):
@@ -32,7 +32,7 @@ def test_cast(connection):
     assert res == [("1",), ("2",), ("3",), ("10",)]
 
 
-@pytest.mark.parametrize("schema", ["public", "loolie", None])
+@mark.parametrize("schema", ["public", "loolie", None])
 def test_date(connection, schema):
     if schema:
         connection.cursor().execute(f"create schema IF NOT EXISTS {schema}")
@@ -62,7 +62,7 @@ def test_null_bools_and_dates(connection):
     assert res == [(datetime(2014, 1, 1, 16, 0), True), (None, False), (datetime(2023, 1, 8, 17, 0), None)]
 
 
-@pytest.mark.parametrize(("queried_sample", "expected_sample"), [("2", 2), ("2.3", 2), ("2.5", 3), ("2.7", 3)])
+@mark.parametrize(("queried_sample", "expected_sample"), [("2", 2), ("2.3", 2), ("2.5", 3), ("2.7", 3)])
 def test_sample_query(connection, queried_sample, expected_sample):
     connection.cursor().execute("create table bar (x int, y text)")
     connection.cursor().execute("insert into bar values (1, 'one'), (2, 'two'), (3, 'three'), (10, 'ten')")
@@ -70,7 +70,7 @@ def test_sample_query(connection, queried_sample, expected_sample):
     assert len(res) == expected_sample
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     ("query", "expected"),
     [
         ("select x, y:a::string from bar;", [(1, "1"), (2, "2")]),

@@ -1,4 +1,4 @@
-import pytest
+from pytest import mark
 
 
 def test_show_schemas(connection):
@@ -25,7 +25,7 @@ def test_show_tables(connection):
     assert {("a", "loolie"), ("b", "loolie"), ("c", "moonie"), ("a", "public"), ("b", "public")} <= names
 
 
-@pytest.mark.parametrize("desc_keyword", ["desc", "describe"])
+@mark.parametrize("desc_keyword", ["desc", "describe"])
 def test_describe_tables(connection, desc_keyword):
     connection.cursor().execute("create table bar (x int, y text)")
     schema_res = connection.cursor().execute(f"{desc_keyword} table bar;").fetchall()

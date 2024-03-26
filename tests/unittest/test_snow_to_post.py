@@ -1,11 +1,11 @@
 from typing import List
 
-import pytest
+from pytest import mark
 
 from yellowbox_snowglobe.snow_to_post import TextLiteral, snow_to_post, split_literals, split_sql_to_statements
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     ("snow", "post"),
     [
         ("", ""),
@@ -31,7 +31,7 @@ def test_snow_to_post(snow: str, post: str):
     assert snow_to_post(snow) == post
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     ("joined", "split"),
     [
         ("", []),
@@ -49,7 +49,7 @@ def test_split_literals(joined: str, split: List[str]):
     assert list(split_literals(joined)) == split
 
 
-@pytest.mark.parametrize(
+@mark.parametrize(
     ("joined", "split"),
     [
         ("", []),
