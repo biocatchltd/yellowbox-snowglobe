@@ -1,5 +1,5 @@
 # Yellowbox Snowglobe Changelog
-## 0.2.5
+## Next
 ### Internal
 * linting changed to ruff
 * github workflows updated actions to avoid node deprecation warning
