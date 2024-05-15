@@ -1,8 +1,13 @@
 # Yellowbox Snowglobe Changelog
-## Next
+## 0.2.5
+### Added
+* official support for python 3.12
+### Removed
+* dropped support for python 3.7
 ### Internal
 * linting changed to ruff
 * github workflows updated actions to avoid node deprecation warning
+* added CI
 ## 0.2.4
 ### Added
 * added support for json queries

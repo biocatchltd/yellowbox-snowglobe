@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "yellowbox-snowglobe"
-version = "0.2.4"
+version = "0.2.5"
 description = ""
 authors = ["Biocatch LTD <serverteam@biocatch.com>"]
 license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.8"
 yellowbox = { version = ">=0.7.0", extras = ["postgresql", "webserver"] }
 
 [tool.poetry.dev-dependencies]
@@ -22,12 +22,15 @@ requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
+line-length = 120
+output-format = "full"
+[tool.ruff.lint]
 # https://beta.ruff.rs/docs/rules/
-lint.select = ["I", "E", "W", "F", "N", "S", "BLE", "COM", "C4", "ISC", "ICN", "G", "PIE", "T20", "PYI", "Q", "SLF", "SIM",
+select = ["I", "E", "W", "F", "N", "S", "BLE", "COM", "C4", "ISC", "ICN", "G", "PIE", "T20", "PYI", "Q", "SLF", "SIM",
           "ERA", "PGH", "PLC", "PLE", "PLR", "PLW", "RUF", "PT", "B", "ANN", "ASYNC", "FBT003", "A", "INP",
           "SLOT", "TID", "PTH", "FLY", "PERF"]
 # should be included later: RET?, ARG, TRY, DTZ?, FA, RSE?, TCH?
-lint.ignore = [
+ignore = [
     "ANN002", # Missing type annotation for `*args`
     "ANN003", # Missing type annotation for `**kwargs`
     "ANN101",  # Missing type annotation for self in method
@@ -43,8 +46,6 @@ lint.ignore = [
     "T201", # `print` found
     "ISC001",  # Implicitly concatenated string literals on one line
 ]
-line-length = 120
-output-format = "full"
 
 [tool.ruff.lint.isort]
 combine-as-imports=true
