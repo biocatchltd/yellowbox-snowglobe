@@ -33,7 +33,6 @@ select = ["I", "E", "W", "F", "N", "S", "BLE", "COM", "C4", "ISC", "ICN", "G", "
 ignore = [
     "ANN002", # Missing type annotation for `*args`
     "ANN003", # Missing type annotation for `**kwargs`
-    "ANN101",  # Missing type annotation for self in method
     "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
     "B008",  # do not perform function calls in argument defaults
     "BLE001", # Do not catch blind exception: `Exception`

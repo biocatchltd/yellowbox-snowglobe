@@ -3,7 +3,7 @@
 set -e
 
 echo "running ruff check..."
-poetry run ruff check .  --fix --show-fixes
+poetry run ruff check .
 echo "running ruff format..."
 poetry run ruff format .
 echo "running mypy..."

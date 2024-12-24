@@ -1,4 +1,8 @@
 # Yellowbox Snowglobe Changelog
+## NEXT
+### Internal
+* removed cahce action from cicd
+* removed autofix from lint script
 ## 0.2.5
 ### Added
 * official support for python 3.12
