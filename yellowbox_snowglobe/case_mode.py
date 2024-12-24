@@ -51,6 +51,6 @@ class AutoCase(CaseMode):
     """
 
     def convert(self, s: str, column_names: Container[str]) -> str:
-        if s not in self.force_ignore and s in self.force_upper or s in column_names:
+        if (s not in self.force_ignore and s in self.force_upper) or s in column_names:
             return s.upper()
         return s
