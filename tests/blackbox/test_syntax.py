@@ -82,3 +82,16 @@ def test_json(connection, db, query, expected):
     connection.cursor().execute("""insert into bar values (1, '{"a":"1", "b":"1"}'), (2, '{"a":"2", "b":"2"}')""")
     res = connection.cursor().execute(query).fetchall()
     assert res == expected
+
+
+@mark.parametrize(
+    ("query", "expected"),
+    [
+        ("select ARRAY_CONSTRUCT(NULL, x) from bar;", [([None, 'hello'],),]),
+    ],
+)
+def test_array(connection, db, query, expected):
+    connection.cursor().execute("create table bar (x text)")
+    connection.cursor().execute("""insert into bar (x) values ('hello')""")
+    res = connection.cursor().execute(query).fetchall()
+    assert res == expected
