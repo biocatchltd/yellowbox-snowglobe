@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Iterable, Iterator, Pattern, Union
+from typing import Callable, Iterable, Iterator, Pattern, Union
 
 """
 This is a miniature transpiler that converts a snowflake-dialect query to a postgresql query.
@@ -75,37 +75,24 @@ def find_matching_paren(text: str, start_pos: int) -> int:
     return pos - 1 if depth == 0 else -1
 
 
-def replace_array_construct(text: str) -> str:
+def replace_array_construct_match(match: re.Match[str], text: str) -> tuple[str, int]:
     """
-    Replaces all occurrences of ARRAY_CONSTRUCT(...) with Array[...] while correctly handling nested parentheses.
+    Replacement function for ARRAY_CONSTRUCT rule.
+    Replaces ARRAY_CONSTRUCT(...) with Array[...] while correctly handling nested parentheses.
+    Returns a tuple of (replacement_text, end_position) where end_position is the position
+    after the closing parenthesis.
     """
-    result = []
-    i = 0
-    while i < len(text):
-        # Search for "ARRAY_CONSTRUCT(" (case-insensitive)
-        array_match = re.search(r'(?i)\bARRAY_CONSTRUCT\(', text[i:])
-        if not array_match:
-            result.append(text[i:])
-            break
-        
-        array_start = i + array_match.start()
-        paren_start = i + array_match.end() - 1  # Position of the '('
-        
-        # Find the corresponding closing parenthesis
-        paren_end = find_matching_paren(text, paren_start)
-        if paren_end == -1:
-            # Parenthesis not closed, leave as is
-            result.append(text[i:])
-            break
-        
-        # Add text before ARRAY_CONSTRUCT(
-        result.append(text[i:array_start])
-        # Add Array[ with the content between parentheses
-        content = text[paren_start + 1:paren_end]
-        result.append(f"Array[{content}]")
-        i = paren_end + 1
+    paren_start = match.end() - 1  # Position of the '(' after ARRAY_CONSTRUCT
     
-    return "".join(result)
+    # Find the corresponding closing parenthesis
+    paren_end = find_matching_paren(text, paren_start)
+    if paren_end == -1:
+        # Parenthesis not closed, return original match and its end position
+        return (match.group(0), match.end())
+    
+    # Extract content between parentheses and replace
+    content = text[paren_start + 1:paren_end]
+    return (f"Array[{content}]", paren_end + 1)
 
 
 """
@@ -120,7 +107,7 @@ I.E don't make a rule that replaces "a b" with "a b c"
 @dataclass
 class Rule:
     pattern: Pattern[str]
-    replacement: str
+    replacement: Union[str, Callable[[re.Match[str], str], Union[str, tuple[str, int]]]]
 
 
 OBJ_PATTERN = r"[a-z][a-z0-9._]*"
@@ -136,6 +123,11 @@ PRE_SPLIT_RULES = [
 ]
 
 RULES = [
+    # ARRAY_CONSTRUCT(...) -> Array[...]
+    Rule(
+        re.compile(r"(?i)\bARRAY_CONSTRUCT\("),
+        replace_array_construct_match,
+    ),
     # commit/rollback
     Rule(re.compile(r"(?i)^(commit|rollback)"), r"!\1"),
     # use database
@@ -197,8 +189,6 @@ RULES = [
 def repl_part(part: Union[str, TextLiteral], rules: Iterable[Rule]) -> str:
     if isinstance(part, TextLiteral):
         return part.value
-    # Replace ARRAY_CONSTRUCT() with Array[] before applying the other rules
-    part = replace_array_construct(part)
     ret_parts = []
     while part:
         best_match = None
@@ -214,7 +204,20 @@ def repl_part(part: Union[str, TextLiteral], rules: Iterable[Rule]) -> str:
         if best_match:
             rule, match = best_match
             ret_parts.append(part[: match.start()])
-            part = match.expand(rule.replacement) + part[match.end() :]
+            # Handle both string and callable replacements
+            if callable(rule.replacement):
+                replacement_result = rule.replacement(match, part)
+                if isinstance(replacement_result, tuple):
+                    # Function returned (replacement, end_position)
+                    replacement, end_pos = replacement_result
+                    part = replacement + part[end_pos:]
+                else:
+                    # Function returned just the replacement string
+                    replacement = replacement_result
+                    part = replacement + part[match.end() :]
+            else:
+                replacement = match.expand(rule.replacement)
+                part = replacement + part[match.end() :]
         else:
             ret_parts.append(part)
             break
