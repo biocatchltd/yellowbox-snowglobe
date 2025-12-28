@@ -88,6 +88,7 @@ def test_json(connection, db, query, expected):
     ("query", "expected"),
     [
         ("select ARRAY_CONSTRUCT(NULL, x) from bar;", [([None, 'hello'],),]),
+        ("select ARRAY_CONSTRUCT(ARRAY_CONSTRUCT(NULL, x)) from bar;", [([[None, 'hello'],],), ]),
     ],
 )
 def test_array(connection, db, query, expected):
