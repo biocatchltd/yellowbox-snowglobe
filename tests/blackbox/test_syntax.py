@@ -19,7 +19,7 @@ def test_lateral_flatten(connection):
     )
     res = (
         connection.cursor()
-        .execute("select x, root.value from bar, lateral flatten(d) as root" " where root.value*root.value = x;")
+        .execute("select x, root.value from bar, lateral flatten(d) as root where root.value*root.value = x;")
         .fetchall()
     )
     assert res == [(4, 2), (9, 3)]
@@ -56,7 +56,7 @@ def test_bools(connection):
 def test_null_bools_and_dates(connection):
     connection.cursor().execute("create table bar (x timestamp, y boolean)")
     connection.cursor().execute(
-        "insert into bar values " "('2014-01-01 16:00:00', true)," " (null, false), " "('2023-01-08 17:00:00', null)"
+        "insert into bar values ('2014-01-01 16:00:00', true), (null, false), ('2023-01-08 17:00:00', null)"
     )
     res = connection.cursor().execute("select * from bar;").fetchall()
     assert res == [(datetime(2014, 1, 1, 16, 0), True), (None, False), (datetime(2023, 1, 8, 17, 0), None)]
@@ -80,5 +80,33 @@ def test_sample_query(connection, queried_sample, expected_sample):
 def test_json(connection, db, query, expected):
     connection.cursor().execute("create table bar (x int, y json)")
     connection.cursor().execute("""insert into bar values (1, '{"a":"1", "b":"1"}'), (2, '{"a":"2", "b":"2"}')""")
+    res = connection.cursor().execute(query).fetchall()
+    assert res == expected
+
+
+@mark.parametrize(
+    ("query", "expected"),
+    [
+        (
+            "select ARRAY_CONSTRUCT(NULL, x) from bar;",
+            [
+                ([None, "hello"],),
+            ],
+        ),
+        (
+            "select ARRAY_CONSTRUCT(ARRAY_CONSTRUCT(NULL, x)) from bar;",
+            [
+                (
+                    [
+                        [None, "hello"],
+                    ],
+                ),
+            ],
+        ),
+    ],
+)
+def test_array(connection, db, query, expected):
+    connection.cursor().execute("create table bar (x text)")
+    connection.cursor().execute("""insert into bar (x) values ('hello')""")
     res = connection.cursor().execute(query).fetchall()
     assert res == expected

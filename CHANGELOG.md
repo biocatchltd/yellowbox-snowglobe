@@ -1,5 +1,7 @@
 # Yellowbox Snowglobe Changelog
-## NEXT
+## 0.2.6
+### Added
+* Added support for ARRAY_CONSTRUCT for PostgreSQL
 ### Internal
 * removed cahce action from cicd
 * removed autofix from lint script
