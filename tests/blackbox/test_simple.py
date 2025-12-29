@@ -18,7 +18,7 @@ def test_connect(docker_client):
         assert results == [(2, "two"), (3, "three")]
 
 
-@mark.asyncio()
+@mark.asyncio
 async def test_connect_async(docker_client):
     async with SnowGlobeService.arun(docker_client) as service:
         with connector.connect(**service.local_connection_kwargs()) as conn:
@@ -32,7 +32,7 @@ async def test_connect_async(docker_client):
             assert results == [(2, "two"), (3, "three")]
 
 
-@mark.asyncio()
+@mark.asyncio
 async def test_simultaneous_connections(docker_client):
     async with SnowGlobeService.arun(docker_client) as service:
         with connector.connect(**service.local_connection_kwargs()) as conn:

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "yellowbox-snowglobe"
-version = "0.2.5"
+version = "0.2.6"
 description = ""
 authors = ["Biocatch LTD <serverteam@biocatch.com>"]
 license = "MIT"
@@ -9,7 +9,7 @@ license = "MIT"
 python = "^3.8"
 yellowbox = { version = ">=0.7.0", extras = ["postgresql", "webserver"] }
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 pytest = "*"
 pytest-asyncio = "*"
 pytest-cov = "*"

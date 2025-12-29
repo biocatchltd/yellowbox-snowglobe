@@ -62,14 +62,14 @@ def find_matching_paren(text: str, start_pos: int) -> int:
     Find the position of the closing parenthesis ')' corresponding to the opening parenthesis '(' at start_pos.
     Handle nested parentheses by counting open/closed parentheses.
     """
-    if start_pos >= len(text) or text[start_pos] != '(':
+    if start_pos >= len(text) or text[start_pos] != "(":
         return -1
     depth = 1
     pos = start_pos + 1
     while pos < len(text) and depth > 0:
-        if text[pos] == '(':
+        if text[pos] == "(":
             depth += 1
-        elif text[pos] == ')':
+        elif text[pos] == ")":
             depth -= 1
         pos += 1
     return pos - 1 if depth == 0 else -1
@@ -83,15 +83,15 @@ def replace_array_construct_match(match: re.Match[str], text: str) -> tuple[str,
     after the closing parenthesis.
     """
     paren_start = match.end() - 1  # Position of the '(' after ARRAY_CONSTRUCT
-    
+
     # Find the corresponding closing parenthesis
     paren_end = find_matching_paren(text, paren_start)
     if paren_end == -1:
         # Parenthesis not closed, return original match and its end position
         return (match.group(0), match.end())
-    
+
     # Extract content between parentheses and replace
-    content = text[paren_start + 1:paren_end]
+    content = text[paren_start + 1 : paren_end]
     return (f"Array[{content}]", paren_end + 1)
 
 
