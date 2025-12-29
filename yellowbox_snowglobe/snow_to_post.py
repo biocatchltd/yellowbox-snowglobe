@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Callable, Iterable, Iterator, Pattern, Union
+from typing import Callable, Iterable, Iterator, Pattern, Tuple, Union
 
 """
 This is a miniature transpiler that converts a snowflake-dialect query to a postgresql query.
@@ -75,7 +75,7 @@ def find_matching_paren(text: str, start_pos: int) -> int:
     return pos - 1 if depth == 0 else -1
 
 
-def replace_array_construct_match(match: re.Match[str], text: str) -> tuple[str, int]:
+def replace_array_construct_match(match: re.Match[str], text: str) -> Tuple[str, int]:
     """
     Replacement function for ARRAY_CONSTRUCT rule.
     Replaces ARRAY_CONSTRUCT(...) with Array[...] while correctly handling nested parentheses.
