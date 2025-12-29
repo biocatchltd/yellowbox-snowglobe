@@ -107,7 +107,7 @@ I.E don't make a rule that replaces "a b" with "a b c"
 @dataclass
 class Rule:
     pattern: Pattern[str]
-    replacement: Union[str, Callable[[re.Match[str], str], Union[str, tuple[str, int]]]]
+    replacement: Union[str, Callable[[re.Match[str], str], Union[str, Tuple[str, int]]]]
 
 
 OBJ_PATTERN = r"[a-z][a-z0-9._]*"
