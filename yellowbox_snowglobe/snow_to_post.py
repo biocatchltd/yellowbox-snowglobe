@@ -62,14 +62,14 @@ def find_matching_paren(text: str, start_pos: int) -> int:
     Find the position of the closing parenthesis ')' corresponding to the opening parenthesis '(' at start_pos.
     Handle nested parentheses by counting open/closed parentheses.
     """
-    if start_pos >= len(text) or text[start_pos] != '(':
+    if start_pos >= len(text) or text[start_pos] != "(":
         return -1
     depth = 1
     pos = start_pos + 1
     while pos < len(text) and depth > 0:
-        if text[pos] == '(':
+        if text[pos] == "(":
             depth += 1
-        elif text[pos] == ')':
+        elif text[pos] == ")":
             depth -= 1
         pos += 1
     return pos - 1 if depth == 0 else -1
@@ -83,28 +83,28 @@ def replace_array_construct(text: str) -> str:
     i = 0
     while i < len(text):
         # Search for "ARRAY_CONSTRUCT(" (case-insensitive)
-        array_match = re.search(r'(?i)\bARRAY_CONSTRUCT\(', text[i:])
+        array_match = re.search(r"(?i)\bARRAY_CONSTRUCT\(", text[i:])
         if not array_match:
             result.append(text[i:])
             break
-        
+
         array_start = i + array_match.start()
         paren_start = i + array_match.end() - 1  # Position of the '('
-        
+
         # Find the corresponding closing parenthesis
         paren_end = find_matching_paren(text, paren_start)
         if paren_end == -1:
             # Parenthesis not closed, leave as is
             result.append(text[i:])
             break
-        
+
         # Add text before ARRAY_CONSTRUCT(
         result.append(text[i:array_start])
         # Add Array[ with the content between parentheses
-        content = text[paren_start + 1:paren_end]
+        content = text[paren_start + 1 : paren_end]
         result.append(f"Array[{content}]")
         i = paren_end + 1
-    
+
     return "".join(result)
 
 
