@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Iterable, Iterator, Pattern, Union
+from typing import Iterable, Iterator, Match, Pattern, Union
 
 """
 This is a miniature transpiler that converts a snowflake-dialect query to a postgresql query.
@@ -126,7 +126,6 @@ class Rule:
 OBJ_PATTERN = r"[a-z][a-z0-9._]*"
 NAME_PATTERN = r"[a-z][a-z0-9_]*"
 
-
 _QUALIFY_ROW_NUMBER_RE = re.compile(
     r"(?is)\bselect\s+\*\s+from\s+(?P<source>" + OBJ_PATTERN + r")\s+where\s+"
     r"(?P<where>.*?)\s+qualify\s+row_number\(\)\s+over\s*\((?P<window>.*?)\)\s*=\s*1"
@@ -148,7 +147,7 @@ def replace_qualify_row_number(query: str) -> str:
     Replaces Snowflake's QUALIFY ROW_NUMBER() = 1 with a subquery filter.
     """
 
-    def repl(match: re.Match[str]) -> str:
+    def repl(match: Match[str]) -> str:
         source = match.group("source")
         where = match.group("where").strip()
         window = match.group("window").strip()
@@ -167,7 +166,7 @@ def replace_alias_is_not_null(query: str) -> str:
     Replaces Snowflake's use of a SELECT alias in WHERE with the aliased expression.
     """
 
-    def repl(match: re.Match[str]) -> str:
+    def repl(match: Match[str]) -> str:
         expr = match.group("expr").strip()
         alias = match.group("alias")
         where = re.sub(
@@ -185,7 +184,7 @@ def replace_json_coalesce_string(query: str) -> str:
     Replaces coalesce(json:field, json:other)::string with text JSON extraction.
     """
 
-    def repl(match: re.Match[str]) -> str:
+    def repl(match: Match[str]) -> str:
         return (
             f"coalesce({match.group('obj1')}->>'{match.group('field1')}', "
             f"{match.group('obj2')}->>'{match.group('field2')}')"
