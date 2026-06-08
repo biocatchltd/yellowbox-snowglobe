@@ -23,35 +23,32 @@ from yellowbox_snowglobe.snow_to_post import TextLiteral, snow_to_post, split_li
         ("select * from foo where x = 'desc table foo''2'", "select * from foo where x = 'desc table foo''2'"),
         ("select * from foo where x = '''desc table foo''2'", "select * from foo where x = '''desc table foo''2'"),
         ("select * from foo sample (10 rows)", "select * from foo order by random() limit 10"),
-        ("select json_column:field::number from foo", "select cast(json_column->>'field' as integer) from foo"),
-        ("select json_column:field::int from foo", "select cast(json_column->>'field' as integer) from foo"),
-        ("select t.json_column:field::int from foo", "select cast(t.json_column->>'field' as integer) from foo"),
-        ("select json_column:field::string from foo", "select json_column->>'field' from foo"),
+        ("select data:a::number from foo", "select cast(data->>'a' as integer) from foo"),
+        ("select data:a::int from foo", "select cast(data->>'a' as integer) from foo"),
+        ("select t.data:a::int from foo", "select cast(t.data->>'a' as integer) from foo"),
+        ("select data:a::string from foo", "select data->>'a' from foo"),
         (
-            "select coalesce(json_column:first, json_column:second)::string from foo",
-            "select coalesce(json_column->>'first', json_column->>'second') from foo",
+            "select coalesce(data:a, data:b)::string from foo",
+            "select coalesce(data->>'a', data->>'b') from foo",
         ),
         (
-            "select * from foo where action = 'login' "
-            "qualify row_number() over (partition by user_id order by created_at desc) = 1",
-            "select * from (select *, row_number() over (partition by user_id order by created_at desc) "
+            "select * from foo where x = 1 qualify row_number() over (partition by y order by z) = 1",
+            "select * from (select *, row_number() over (partition by y order by z) "
             "as __snowglobe_qualify_row_number "
-            "from foo where action = 'login') __snowglobe_qualify "
+            "from foo where x = 1) __snowglobe_qualify "
             "where __snowglobe_qualify_row_number = 1",
         ),
         (
             """
-            select coalesce(primary_id, fallback_id) as merged_id, count(distinct user_id) cnt
+            select coalesce(x, y) as z, count(*) cnt
             from foo
-            where created_at between current_date - 180 and current_date
-            and merged_id is not null
+            where z is not null
             group by 1
             """,
             """
-            select coalesce(primary_id, fallback_id) as merged_id, count(distinct user_id) cnt
+            select coalesce(x, y) as z, count(*) cnt
             from foo
-            where created_at between current_date - 180 and current_date
-            and coalesce(primary_id, fallback_id) is not null
+            where coalesce(x, y) is not null
             group by 1
             """,
         ),
