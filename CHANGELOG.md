@@ -1,4 +1,12 @@
 # Yellowbox Snowglobe Changelog
+## 0.2.7
+### Added
+* Added support for QUALIFY ROW_NUMBER filters.
+* Added support for Snowflake SELECT aliases in WHERE clauses.
+* Added support for dotted JSON paths, JSON int casts, and JSON coalesce string casts.
+### Fixed
+* Fixed Decimal query results serialization.
+* Fixed transaction handling after COMMIT and ROLLBACK.
 ## 0.2.6
 ### Added
 * Added support for ARRAY_CONSTRUCT for PostgreSQL
