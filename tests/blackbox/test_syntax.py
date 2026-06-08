@@ -100,6 +100,18 @@ def test_multiple_commits(connection):
     assert res == [(1,)]
 
 
+def test_drop_table(connection):
+    connection.cursor().execute("create table bar (x int)")
+    connection.cursor().execute("drop table if exists bar")
+    res = connection.cursor().execute("show tables").fetchall()
+    assert all(row[1] != "BAR" for row in res)
+
+
+def test_current_timestamp_function(connection):
+    res = connection.cursor().execute("select current_timestamp()").fetchall()
+    assert res[0][0] is not None
+
+
 @mark.parametrize(
     ("query", "expected"),
     [

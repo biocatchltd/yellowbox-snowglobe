@@ -23,6 +23,7 @@ from yellowbox_snowglobe.snow_to_post import TextLiteral, snow_to_post, split_li
         ("select * from foo where x = 'desc table foo''2'", "select * from foo where x = 'desc table foo''2'"),
         ("select * from foo where x = '''desc table foo''2'", "select * from foo where x = '''desc table foo''2'"),
         ("select * from foo sample (10 rows)", "select * from foo order by random() limit 10"),
+        ("select current_timestamp() from foo", "select current_timestamp from foo"),
         ("select data:a::number from foo", "select cast(data->>'a' as integer) from foo"),
         ("select data:a::int from foo", "select cast(data->>'a' as integer) from foo"),
         ("select t.data:a::int from foo", "select cast(t.data->>'a' as integer) from foo"),
@@ -49,6 +50,30 @@ from yellowbox_snowglobe.snow_to_post import TextLiteral, snow_to_post, split_li
             select coalesce(x, y) as z, count(*) cnt
             from foo
             where coalesce(x, y) is not null
+            group by 1
+            """,
+        ),
+        (
+            """
+            select x as z, count(*) cnt
+            from foo
+            where z is not null
+            group by 1
+            union all
+            select y as z, count(*) cnt
+            from bar
+            where z is not null
+            group by 1
+            """,
+            """
+            select x as z, count(*) cnt
+            from foo
+            where x is not null
+            group by 1
+            union all
+            select y as z, count(*) cnt
+            from bar
+            where y is not null
             group by 1
             """,
         ),

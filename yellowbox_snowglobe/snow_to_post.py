@@ -132,7 +132,7 @@ _QUALIFY_ROW_NUMBER_RE = re.compile(
 )
 _ALIAS_IS_NOT_NULL_RE = re.compile(
     r"(?is)\bselect\s+(?P<expr>.*?)\s+as\s+(?P<alias>" + NAME_PATTERN + r")\s*,"
-    r"(?P<rest>.*?\bwhere\b)(?P<where>.*?)(?P<group>\bgroup\s+by\b.*)"
+    r"(?P<rest>.*?\bwhere\b)(?P<where>.*?)(?P<group>\bgroup\s+by\b.*?)(?=\bunion\b|\)|$)"
 )
 _JSON_COALESCE_STRING_RE = re.compile(
     r"(?is)coalesce\(\s*"
@@ -264,6 +264,8 @@ RULES = [
     ),
     # Ignore sample in queries
     Rule(re.compile(r"(?i)\bsample\s+\(([0-9\.]+)\s+rows\)"), replacement=r"order by random() limit \1"),
+    # current timestamp
+    Rule(re.compile(r"(?i)\bcurrent_timestamp\(\)"), replacement=r"current_timestamp"),
 ]
 
 

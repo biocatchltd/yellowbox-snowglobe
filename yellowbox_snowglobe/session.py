@@ -164,6 +164,9 @@ class SnowGlobeSession:
             "database": _do_ignore,
             None: _do_mutating_noresponse,
         },
+        "drop": {
+            "table": _do_mutating_noresponse,
+        },
         "set": _do_mutating_noresponse,
         "delete": _do_mutating_noresponse,
         "update": _do_mutating_noresponse,
