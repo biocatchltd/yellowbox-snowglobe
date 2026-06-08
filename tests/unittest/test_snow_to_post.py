@@ -32,26 +32,26 @@ from yellowbox_snowglobe.snow_to_post import TextLiteral, snow_to_post, split_li
             "select coalesce(json_column->>'first', json_column->>'second') from foo",
         ),
         (
-            "select * from t1 where score_action = 'getscore' "
-            "qualify row_number() over (partition by sid order by abs(days_since) asc) = 1",
-            "select * from (select *, row_number() over (partition by sid order by abs(days_since) asc) "
+            "select * from foo where action = 'login' "
+            "qualify row_number() over (partition by user_id order by created_at desc) = 1",
+            "select * from (select *, row_number() over (partition by user_id order by created_at desc) "
             "as __snowglobe_qualify_row_number "
-            "from t1 where score_action = 'getscore') __snowglobe_qualify "
+            "from foo where action = 'login') __snowglobe_qualify "
             "where __snowglobe_qualify_row_number = 1",
         ),
         (
             """
-            select coalesce(api_req_trust_payee_id, payee_value) as payee_value_final, count(distinct uid) cnt
-            from customer1.api_calls
-            where starttime between current_date - 180 and current_date
-            and payee_value_final is not null
+            select coalesce(primary_id, fallback_id) as merged_id, count(distinct user_id) cnt
+            from foo
+            where created_at between current_date - 180 and current_date
+            and merged_id is not null
             group by 1
             """,
             """
-            select coalesce(api_req_trust_payee_id, payee_value) as payee_value_final, count(distinct uid) cnt
-            from customer1.api_calls
-            where starttime between current_date - 180 and current_date
-            and coalesce(api_req_trust_payee_id, payee_value) is not null
+            select coalesce(primary_id, fallback_id) as merged_id, count(distinct user_id) cnt
+            from foo
+            where created_at between current_date - 180 and current_date
+            and coalesce(primary_id, fallback_id) is not null
             group by 1
             """,
         ),
