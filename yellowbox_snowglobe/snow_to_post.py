@@ -126,6 +126,80 @@ class Rule:
 OBJ_PATTERN = r"[a-z][a-z0-9._]*"
 NAME_PATTERN = r"[a-z][a-z0-9_]*"
 
+
+_QUALIFY_ROW_NUMBER_RE = re.compile(
+    r"(?is)\bselect\s+\*\s+from\s+(?P<source>" + OBJ_PATTERN + r")\s+where\s+"
+    r"(?P<where>.*?)\s+qualify\s+row_number\(\)\s+over\s*\((?P<window>.*?)\)\s*=\s*1"
+)
+_ALIAS_IS_NOT_NULL_RE = re.compile(
+    r"(?is)\bselect\s+(?P<expr>.*?)\s+as\s+(?P<alias>" + NAME_PATTERN + r")\s*,"
+    r"(?P<rest>.*?\bwhere\b)(?P<where>.*?)(?P<group>\bgroup\s+by\b.*)"
+)
+_JSON_COALESCE_STRING_RE = re.compile(
+    r"(?is)coalesce\(\s*"
+    r"(?P<obj1>" + OBJ_PATTERN + r"):(?P<field1>" + NAME_PATTERN + r")\s*,\s*"
+    r"(?P<obj2>" + OBJ_PATTERN + r"):(?P<field2>" + NAME_PATTERN + r")\s*"
+    r"\)::string"
+)
+
+
+def replace_qualify_row_number(query: str) -> str:
+    """
+    Replaces Snowflake's QUALIFY ROW_NUMBER() = 1 with a subquery filter.
+    """
+
+    def repl(match: re.Match[str]) -> str:
+        source = match.group("source")
+        where = match.group("where").strip()
+        window = match.group("window").strip()
+        return (
+            "select * from ("
+            f"select *, row_number() over ({window}) as __snowglobe_qualify_row_number "
+            f"from {source} where {where}"
+            ") __snowglobe_qualify where __snowglobe_qualify_row_number = 1"
+        )
+
+    return _QUALIFY_ROW_NUMBER_RE.sub(repl, query)
+
+
+def replace_alias_is_not_null(query: str) -> str:
+    """
+    Replaces Snowflake's use of a SELECT alias in WHERE with the aliased expression.
+    """
+
+    def repl(match: re.Match[str]) -> str:
+        expr = match.group("expr").strip()
+        alias = match.group("alias")
+        where = re.sub(
+            rf"(?i)\b{re.escape(alias)}\s+is\s+not\s+null\b",
+            f"{expr} is not null",
+            match.group("where"),
+        )
+        return f"select {expr} as {alias},{match.group('rest')}{where}{match.group('group')}"
+
+    return _ALIAS_IS_NOT_NULL_RE.sub(repl, query)
+
+
+def replace_json_coalesce_string(query: str) -> str:
+    """
+    Replaces coalesce(json:field, json:other)::string with text JSON extraction.
+    """
+
+    def repl(match: re.Match[str]) -> str:
+        return (
+            f"coalesce({match.group('obj1')}->>'{match.group('field1')}', "
+            f"{match.group('obj2')}->>'{match.group('field2')}')"
+        )
+
+    return _JSON_COALESCE_STRING_RE.sub(repl, query)
+
+
+def replace_snowflake_only_clauses(query: str) -> str:
+    query = replace_json_coalesce_string(query)
+    query = replace_qualify_row_number(query)
+    return replace_alias_is_not_null(query)
+
+
 # note that all commands starting with ! are special non-postgres commands for the session to handle specially
 
 # these are special rules that are run before the split_literals, as such they should be used sparingly (you almost
@@ -157,12 +231,12 @@ RULES = [
     ),
     # json query string
     Rule(
-        re.compile(r"(?ix)\b" r"(" + NAME_PATTERN + r"):(" + NAME_PATTERN + ")" + "::string" + r"\b"),
+        re.compile(r"(?ix)\b" r"(" + OBJ_PATTERN + r"):(" + NAME_PATTERN + ")" + "::string" + r"\b"),
         replacement=r"\1->>'\2'",
     ),
     # json query int
     Rule(
-        re.compile(r"(?ix)\b" r"(" + NAME_PATTERN + r"):(" + NAME_PATTERN + ")" + "::number" + r"\b"),
+        re.compile(r"(?ix)\b" r"(" + OBJ_PATTERN + r"):(" + NAME_PATTERN + ")" + "::(number|int)" + r"\b"),
         replacement=r"cast(\1->>'\2' as integer)",
     ),
     # show schemas
@@ -223,4 +297,5 @@ def repl_part(part: Union[str, TextLiteral], rules: Iterable[Rule]) -> str:
 
 def snow_to_post(query: str) -> str:
     query = repl_part(query, PRE_SPLIT_RULES)
+    query = replace_snowflake_only_clauses(query)
     return "".join(repl_part(part, RULES) for part in split_literals(query))

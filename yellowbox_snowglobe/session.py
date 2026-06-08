@@ -97,12 +97,19 @@ class SnowGlobeSession:
     def _do_ignore(self, query: str) -> QUERY_RESPONSE:
         return None
 
+    def _restart_transaction(self) -> None:
+        self._transaction = self.connection.begin()
+
     def _do_commit(self, query: str) -> QUERY_RESPONSE:
-        self.transaction.commit()
+        if self.transaction.is_active:
+            self.transaction.commit()
+        self._restart_transaction()
         return None
 
     def _do_rollback(self, query: str) -> QUERY_RESPONSE:
-        self.transaction.rollback()
+        if self.transaction.is_active:
+            self.transaction.rollback()
+        self._restart_transaction()
         return None
 
     def _do_use_database(self, query: str) -> QUERY_RESPONSE:

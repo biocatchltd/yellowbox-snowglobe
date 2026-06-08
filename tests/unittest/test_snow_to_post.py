@@ -24,7 +24,37 @@ from yellowbox_snowglobe.snow_to_post import TextLiteral, snow_to_post, split_li
         ("select * from foo where x = '''desc table foo''2'", "select * from foo where x = '''desc table foo''2'"),
         ("select * from foo sample (10 rows)", "select * from foo order by random() limit 10"),
         ("select json_column:field::number from foo", "select cast(json_column->>'field' as integer) from foo"),
+        ("select json_column:field::int from foo", "select cast(json_column->>'field' as integer) from foo"),
+        ("select t.json_column:field::int from foo", "select cast(t.json_column->>'field' as integer) from foo"),
         ("select json_column:field::string from foo", "select json_column->>'field' from foo"),
+        (
+            "select coalesce(json_column:first, json_column:second)::string from foo",
+            "select coalesce(json_column->>'first', json_column->>'second') from foo",
+        ),
+        (
+            "select * from t1 where score_action = 'getscore' "
+            "qualify row_number() over (partition by sid order by abs(days_since) asc) = 1",
+            "select * from (select *, row_number() over (partition by sid order by abs(days_since) asc) "
+            "as __snowglobe_qualify_row_number "
+            "from t1 where score_action = 'getscore') __snowglobe_qualify "
+            "where __snowglobe_qualify_row_number = 1",
+        ),
+        (
+            """
+            select coalesce(api_req_trust_payee_id, payee_value) as payee_value_final, count(distinct uid) cnt
+            from customer1.api_calls
+            where starttime between current_date - 180 and current_date
+            and payee_value_final is not null
+            group by 1
+            """,
+            """
+            select coalesce(api_req_trust_payee_id, payee_value) as payee_value_final, count(distinct uid) cnt
+            from customer1.api_calls
+            where starttime between current_date - 180 and current_date
+            and coalesce(api_req_trust_payee_id, payee_value) is not null
+            group by 1
+            """,
+        ),
     ],
 )
 def test_snow_to_post(snow: str, post: str):

@@ -84,6 +84,22 @@ def test_json(connection, db, query, expected):
     assert res == expected
 
 
+def test_numeric_results_are_serializable(connection):
+    connection.cursor().execute("create table bar (x numeric)")
+    connection.cursor().execute("insert into bar values (1.5), (2.5)")
+    res = connection.cursor().execute("select x from bar order by x").fetchall()
+    assert res == [("1.5",), ("2.5",)]
+
+
+def test_multiple_commits(connection):
+    connection.cursor().execute("create table bar (x int)")
+    connection.cursor().execute("commit")
+    connection.cursor().execute("insert into bar values (1)")
+    connection.cursor().execute("commit")
+    res = connection.cursor().execute("select x from bar").fetchall()
+    assert res == [(1,)]
+
+
 @mark.parametrize(
     ("query", "expected"),
     [
