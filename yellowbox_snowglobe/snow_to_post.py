@@ -329,10 +329,7 @@ def repl_part(part: Union[str, TextLiteral], rules: Iterable[Rule]) -> str:
                     best_match_key = match_key
         if best_match:
             rule, match = best_match
-            if callable(rule.replacement):
-                replacement = rule.replacement(match)
-            else:
-                replacement = match.expand(rule.replacement)
+            replacement = rule.replacement(match) if callable(rule.replacement) else match.expand(rule.replacement)
             if replacement == match.group():
                 ret_parts.append(part[: match.start() + 1])
                 part = part[match.start() + 1 :]
