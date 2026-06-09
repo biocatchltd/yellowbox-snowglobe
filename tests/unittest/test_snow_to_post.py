@@ -55,6 +55,34 @@ from yellowbox_snowglobe.snow_to_post import TextLiteral, snow_to_post, split_li
         ),
         (
             """
+            select count(*) cnt, coalesce(x, y) as z
+            from foo
+            where z = 'literal z'
+            group by 1
+            """,
+            """
+            select count(*) cnt, coalesce(x, y) as z
+            from foo
+            where coalesce(x, y) = 'literal z'
+            group by 1
+            """,
+        ),
+        (
+            """
+            select x as z, y as q, count(*) cnt
+            from foo
+            where z > 1 and q is null
+            group by 1
+            """,
+            """
+            select x as z, y as q, count(*) cnt
+            from foo
+            where x > 1 and y is null
+            group by 1
+            """,
+        ),
+        (
+            """
             select x as z, count(*) cnt
             from foo
             where z is not null
