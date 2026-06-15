@@ -244,6 +244,10 @@ def replace_json_coalesce_string(match: Match[str]) -> str:
 PRE_SPLIT_RULES = [
     # retrieved stored asynchronous result
     Rule(re.compile(r"(?i)^select\s+\*\s+from\s+table\(result_scan\('([a-f0-9-]+)'\)\)"), r"!retrieve \1"),
+    Rule(
+        re.compile(r"(?i)\bilike\s+any\s*\(\s*(?!array\[)([^)]+)\)"),
+        replacement=r"ilike any (array[\1])",
+    ),
     Rule(_JSON_COALESCE_STRING_RE, replace_json_coalesce_string),
     Rule(_QUALIFY_ROW_NUMBER_RE, replace_qualify_row_number),
     Rule(_ALIAS_IN_WHERE_RE, replace_aliases_in_where_clause),
@@ -307,6 +311,11 @@ RULES = [
     Rule(re.compile(r"(?i)\bsample\s+\(([0-9\.]+)\s+rows\)"), replacement=r"order by random() limit \1"),
     # current timestamp
     Rule(re.compile(r"(?i)\bcurrent_timestamp\(\)"), replacement=r"current_timestamp"),
+    # listagg
+    Rule(
+        re.compile(r"(?i)\blistagg\s*\(\s*distinct\s+(" + OBJ_PATTERN + r")\s*\)"),
+        replacement=r"string_agg(distinct \1::text, '')",
+    ),
 ]
 
 

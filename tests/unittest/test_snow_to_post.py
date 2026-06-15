@@ -24,6 +24,11 @@ from yellowbox_snowglobe.snow_to_post import TextLiteral, snow_to_post, split_li
         ("select * from foo where x = '''desc table foo''2'", "select * from foo where x = '''desc table foo''2'"),
         ("select * from foo sample (10 rows)", "select * from foo order by random() limit 10"),
         ("select current_timestamp() from foo", "select current_timestamp from foo"),
+        ("select listagg(distinct fraud_type) from foo", "select string_agg(distinct fraud_type::text, '') from foo"),
+        (
+            "select * from foo where fraud_type ilike any ('%mule%', '%susp%')",
+            "select * from foo where fraud_type ilike any (array['%mule%', '%susp%'])",
+        ),
         ("select data:a::number from foo", "select cast(data->>'a' as integer) from foo"),
         ("select data:a::int from foo", "select cast(data->>'a' as integer) from foo"),
         ("select t.data:a::int from foo", "select cast(t.data->>'a' as integer) from foo"),
