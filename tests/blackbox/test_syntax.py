@@ -85,7 +85,9 @@ def test_json(connection, db, query, expected):
 
 
 def test_parse_json(connection):
-    res = connection.cursor().execute("""select parse_json('{"a":"1"}'):a::string""").fetchall()
+    connection.cursor().execute("create table parsed_json (y json)")
+    connection.cursor().execute("""insert into parsed_json values (parse_json('{"a":"1"}'))""")
+    res = connection.cursor().execute("select y:a::string from parsed_json").fetchall()
     assert res == [("1",)]
 
 
