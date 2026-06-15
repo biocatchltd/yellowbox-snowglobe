@@ -84,6 +84,11 @@ def test_json(connection, db, query, expected):
     assert res == expected
 
 
+def test_parse_json(connection):
+    res = connection.cursor().execute("""select parse_json('{"a":"1"}'):a::string""").fetchall()
+    assert res == [("1",)]
+
+
 def test_numeric_results_are_serializable(connection):
     connection.cursor().execute("create table bar (x numeric)")
     connection.cursor().execute("insert into bar values (1.5), (2.5)")
