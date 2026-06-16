@@ -24,92 +24,10 @@ from yellowbox_snowglobe.snow_to_post import TextLiteral, snow_to_post, split_li
         ("select * from foo where x = '''desc table foo''2'", "select * from foo where x = '''desc table foo''2'"),
         ("select * from foo sample (10 rows)", "select * from foo order by random() limit 10"),
         ("select current_timestamp() from foo", "select current_timestamp from foo"),
-        ("select listagg(distinct fraud_type) from foo", "select string_agg(distinct fraud_type::text, '') from foo"),
-        (
-            "select * from foo where fraud_type ilike any ('%mule%', '%susp%')",
-            "select * from foo where fraud_type ilike any (array['%mule%', '%susp%'])",
-        ),
         ("select data:a::number from foo", "select cast(data->>'a' as integer) from foo"),
         ("select data:a::int from foo", "select cast(data->>'a' as integer) from foo"),
         ("select t.data:a::int from foo", "select cast(t.data->>'a' as integer) from foo"),
         ("select data:a::string from foo", "select data->>'a' from foo"),
-        (
-            "select coalesce(data:a, data:b)::string from foo",
-            "select coalesce(data->>'a', data->>'b') from foo",
-        ),
-        (
-            "select * from foo where x = 1 qualify row_number() over (partition by y order by z) = 1",
-            "select * from (select *, row_number() over (partition by y order by z) "
-            "as __snowglobe_qualify_row_number "
-            "from foo where x = 1) __snowglobe_qualify "
-            "where __snowglobe_qualify_row_number = 1",
-        ),
-        (
-            """
-            select coalesce(x, y) as z, count(*) cnt
-            from foo
-            where z is not null
-            group by 1
-            """,
-            """
-            select coalesce(x, y) as z, count(*) cnt
-            from foo
-            where coalesce(x, y) is not null
-            group by 1
-            """,
-        ),
-        (
-            """
-            select count(*) cnt, coalesce(x, y) as z
-            from foo
-            where z = 'literal z'
-            group by 1
-            """,
-            """
-            select count(*) cnt, coalesce(x, y) as z
-            from foo
-            where coalesce(x, y) = 'literal z'
-            group by 1
-            """,
-        ),
-        (
-            """
-            select x as z, y as q, count(*) cnt
-            from foo
-            where z > 1 and q is null
-            group by 1
-            """,
-            """
-            select x as z, y as q, count(*) cnt
-            from foo
-            where x > 1 and y is null
-            group by 1
-            """,
-        ),
-        (
-            """
-            select x as z, count(*) cnt
-            from foo
-            where z is not null
-            group by 1
-            union all
-            select y as z, count(*) cnt
-            from bar
-            where z is not null
-            group by 1
-            """,
-            """
-            select x as z, count(*) cnt
-            from foo
-            where x is not null
-            group by 1
-            union all
-            select y as z, count(*) cnt
-            from bar
-            where y is not null
-            group by 1
-            """,
-        ),
     ],
 )
 def test_snow_to_post(snow: str, post: str):

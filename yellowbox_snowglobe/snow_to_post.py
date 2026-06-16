@@ -1,6 +1,6 @@
 import re
 from dataclasses import dataclass
-from typing import Callable, Dict, Iterable, Iterator, Match, Pattern, Union
+from typing import Iterable, Iterator, Pattern, Union
 
 """
 This is a miniature transpiler that converts a snowflake-dialect query to a postgresql query.
@@ -120,121 +120,11 @@ I.E don't make a rule that replaces "a b" with "a b c"
 @dataclass
 class Rule:
     pattern: Pattern[str]
-    replacement: Union[str, Callable[[Match[str]], str]]
+    replacement: str
 
 
 OBJ_PATTERN = r"[a-z][a-z0-9._]*"
 NAME_PATTERN = r"[a-z][a-z0-9_]*"
-
-_QUALIFY_ROW_NUMBER_RE = re.compile(
-    r"""
-    \bselect\s+\*\s+from\s+(?P<source>""" + OBJ_PATTERN + r""")\s+where\s+
-    (?P<where>.*?)\s+qualify\s+row_number\(\)\s+over\s*\((?P<window>.*?)\)\s*=\s*1
-    """,
-    re.IGNORECASE | re.DOTALL | re.VERBOSE,
-)
-_ALIAS_IN_WHERE_RE = re.compile(
-    r"""
-    \bselect\s+(?P<select>.*?\s+as\s+""" + NAME_PATTERN + r""".*?)
-    (?P<rest>\s+from\s+.*?\bwhere\b)
-    (?P<where>.*?)
-    (?P<group>\bgroup\s+by\b.*?)
-    (?=\bunion\b|\)|$)
-    """,
-    re.IGNORECASE | re.DOTALL | re.VERBOSE,
-)
-_SELECT_ALIAS_RE = re.compile(r"(?is)^(?P<expr>.*?)\s+as\s+(?P<alias>" + NAME_PATTERN + r")\s*$")
-_JSON_COALESCE_STRING_RE = re.compile(
-    r"(?is)coalesce\(\s*"
-    r"(?P<obj1>" + OBJ_PATTERN + r"):(?P<field1>" + NAME_PATTERN + r")\s*,\s*"
-    r"(?P<obj2>" + OBJ_PATTERN + r"):(?P<field2>" + NAME_PATTERN + r")\s*"
-    r"\)::string"
-)
-
-
-def replace_qualify_row_number(match: Match[str]) -> str:
-    """
-    Replaces Snowflake's QUALIFY ROW_NUMBER() = 1 with a subquery filter.
-    """
-    source = match.group("source")
-    where = match.group("where").strip()
-    window = match.group("window").strip()
-    return (
-        "select * from ("
-        f"select *, row_number() over ({window}) as __snowglobe_qualify_row_number "
-        f"from {source} where {where}"
-        ") __snowglobe_qualify where __snowglobe_qualify_row_number = 1"
-    )
-
-
-def split_top_level_commas(text: str) -> Iterator[str]:
-    start = 0
-    depth = 0
-    pos = 0
-    in_literal = False
-    while pos < len(text):
-        char = text[pos]
-        if in_literal:
-            if char == "'" and pos + 1 < len(text) and text[pos + 1] == "'":
-                pos += 2
-                continue
-            if char == "'":
-                in_literal = False
-        elif char == "'":
-            in_literal = True
-        elif char == "(":
-            depth += 1
-        elif char == ")" and depth:
-            depth -= 1
-        elif char == "," and depth == 0:
-            yield text[start:pos]
-            start = pos + 1
-        pos += 1
-    yield text[start:]
-
-
-def select_aliases(select_list: str) -> Dict[str, str]:
-    aliases = {}
-    for item in split_top_level_commas(select_list):
-        alias_match = _SELECT_ALIAS_RE.match(item.strip())
-        if alias_match:
-            aliases[alias_match.group("alias").lower()] = alias_match.group("expr").strip()
-    return aliases
-
-
-def replace_aliases_in_where(where: str, aliases: Dict[str, str]) -> str:
-    alias_pattern = re.compile(
-        r"(?i)(?<![.\w])(" + "|".join(re.escape(alias) for alias in sorted(aliases, key=len, reverse=True)) + r")(?!\w)"
-    )
-
-    def repl(match: Match[str]) -> str:
-        return aliases[match.group().lower()]
-
-    return "".join(
-        part.value if isinstance(part, TextLiteral) else alias_pattern.sub(repl, part) for part in split_literals(where)
-    )
-
-
-def replace_aliases_in_where_clause(match: Match[str]) -> str:
-    """
-    Replaces Snowflake's use of SELECT aliases in WHERE with the aliased expressions.
-    """
-    select_list = match.group("select")
-    aliases = select_aliases(select_list)
-    if not aliases:
-        return match.group()
-    where = replace_aliases_in_where(match.group("where"), aliases)
-    return f"select {select_list}{match.group('rest')}{where}{match.group('group')}"
-
-
-def replace_json_coalesce_string(match: Match[str]) -> str:
-    """
-    Replaces coalesce(json:field, json:other)::string with text JSON extraction.
-    """
-    return (
-        f"coalesce({match.group('obj1')}->>'{match.group('field1')}', "
-        f"{match.group('obj2')}->>'{match.group('field2')}')"
-    )
 
 
 # note that all commands starting with ! are special non-postgres commands for the session to handle specially
@@ -244,13 +134,6 @@ def replace_json_coalesce_string(match: Match[str]) -> str:
 PRE_SPLIT_RULES = [
     # retrieved stored asynchronous result
     Rule(re.compile(r"(?i)^select\s+\*\s+from\s+table\(result_scan\('([a-f0-9-]+)'\)\)"), r"!retrieve \1"),
-    Rule(
-        re.compile(r"(?i)\bilike\s+any\s*\(\s*(?!array\[)([^)]+)\)"),
-        replacement=r"ilike any (array[\1])",
-    ),
-    Rule(_JSON_COALESCE_STRING_RE, replace_json_coalesce_string),
-    Rule(_QUALIFY_ROW_NUMBER_RE, replace_qualify_row_number),
-    Rule(_ALIAS_IN_WHERE_RE, replace_aliases_in_where_clause),
 ]
 
 RULES = [
@@ -311,11 +194,6 @@ RULES = [
     Rule(re.compile(r"(?i)\bsample\s+\(([0-9\.]+)\s+rows\)"), replacement=r"order by random() limit \1"),
     # current timestamp
     Rule(re.compile(r"(?i)\bcurrent_timestamp\(\)"), replacement=r"current_timestamp"),
-    # listagg
-    Rule(
-        re.compile(r"(?i)\blistagg\s*\(\s*distinct\s+(" + OBJ_PATTERN + r")\s*\)"),
-        replacement=r"string_agg(distinct \1::text, '')",
-    ),
 ]
 
 
@@ -338,13 +216,8 @@ def repl_part(part: Union[str, TextLiteral], rules: Iterable[Rule]) -> str:
                     best_match_key = match_key
         if best_match:
             rule, match = best_match
-            replacement = rule.replacement(match) if callable(rule.replacement) else match.expand(rule.replacement)
-            if replacement == match.group():
-                ret_parts.append(part[: match.start() + 1])
-                part = part[match.start() + 1 :]
-            else:
-                ret_parts.append(part[: match.start()])
-                part = replacement + part[match.end() :]
+            ret_parts.append(part[: match.start()])
+            part = match.expand(rule.replacement) + part[match.end() :]
         else:
             ret_parts.append(part)
             break
