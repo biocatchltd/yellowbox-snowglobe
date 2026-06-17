@@ -1,9 +1,10 @@
 # Yellowbox Snowglobe Changelog
 ## 0.2.7
 ### Added
-* Added support for QUALIFY ROW_NUMBER filters.
-* Added support for Snowflake SELECT aliases in WHERE clauses.
-* Added support for dotted JSON paths, JSON int casts, and JSON coalesce string casts.
+* Added support for dotted JSON paths and JSON `::int` casts.
+* Added support for `parse_json(...)`.
+* Added support for `current_timestamp()` queries.
+* Added support for `DROP TABLE IF EXISTS` statements.
 ### Fixed
 * Fixed Decimal query results serialization.
 * Fixed transaction handling after COMMIT and ROLLBACK.
