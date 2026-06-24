@@ -8,6 +8,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.8"
 yellowbox = { version = ">=0.7.0", extras = ["postgresql", "webserver"] }
+sqlalchemy = "^1"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
