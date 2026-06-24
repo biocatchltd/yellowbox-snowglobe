@@ -4,6 +4,7 @@ import gzip
 import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from decimal import Decimal
 from traceback import print_exc
 from typing import Any, Callable, Container, Dict, Optional, Sequence
 from uuid import uuid4
@@ -41,6 +42,7 @@ class SnowType:
 
 PY_TYPE_TO_SNOW_TYPE = {
     int: SnowType("NUMBER"),
+    Decimal: SnowType("NUMBER", str),
     str: SnowType("TEXT"),
     float: SnowType("FLOAT"),
     bool: SnowType("BOOLEAN", lambda x: str(int(x))),

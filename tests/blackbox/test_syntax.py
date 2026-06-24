@@ -84,6 +84,41 @@ def test_json(connection, db, query, expected):
     assert res == expected
 
 
+def test_parse_json(connection):
+    connection.cursor().execute("create table parsed_json (y json)")
+    connection.cursor().execute("""insert into parsed_json values (parse_json('{"a":"1"}'))""")
+    res = connection.cursor().execute("select y:a::string from parsed_json").fetchall()
+    assert res == [("1",)]
+
+
+def test_numeric_results_are_serializable(connection):
+    connection.cursor().execute("create table bar (x numeric)")
+    connection.cursor().execute("insert into bar values (1.5), (2.5)")
+    res = connection.cursor().execute("select x from bar order by x").fetchall()
+    assert res == [("1.5",), ("2.5",)]
+
+
+def test_multiple_commits(connection):
+    connection.cursor().execute("create table bar (x int)")
+    connection.cursor().execute("commit")
+    connection.cursor().execute("insert into bar values (1)")
+    connection.cursor().execute("commit")
+    res = connection.cursor().execute("select x from bar").fetchall()
+    assert res == [(1,)]
+
+
+def test_drop_table(connection):
+    connection.cursor().execute("create table bar (x int)")
+    connection.cursor().execute("drop table if exists bar")
+    res = connection.cursor().execute("show tables").fetchall()
+    assert all(row[1] != "BAR" for row in res)
+
+
+def test_current_timestamp_function(connection):
+    res = connection.cursor().execute("select current_timestamp()").fetchall()
+    assert res[0][0] is not None
+
+
 @mark.parametrize(
     ("query", "expected"),
     [

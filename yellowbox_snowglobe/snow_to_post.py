@@ -126,6 +126,7 @@ class Rule:
 OBJ_PATTERN = r"[a-z][a-z0-9._]*"
 NAME_PATTERN = r"[a-z][a-z0-9_]*"
 
+
 # note that all commands starting with ! are special non-postgres commands for the session to handle specially
 
 # these are special rules that are run before the split_literals, as such they should be used sparingly (you almost
@@ -157,12 +158,12 @@ RULES = [
     ),
     # json query string
     Rule(
-        re.compile(r"(?ix)\b" r"(" + NAME_PATTERN + r"):(" + NAME_PATTERN + ")" + "::string" + r"\b"),
+        re.compile(r"(?ix)\b" r"(" + OBJ_PATTERN + r"):(" + NAME_PATTERN + ")" + "::string" + r"\b"),
         replacement=r"\1->>'\2'",
     ),
     # json query int
     Rule(
-        re.compile(r"(?ix)\b" r"(" + NAME_PATTERN + r"):(" + NAME_PATTERN + ")" + "::number" + r"\b"),
+        re.compile(r"(?ix)\b" r"(" + OBJ_PATTERN + r"):(" + NAME_PATTERN + ")" + "::(number|int)" + r"\b"),
         replacement=r"cast(\1->>'\2' as integer)",
     ),
     # show schemas
@@ -191,6 +192,8 @@ RULES = [
     ),
     # Ignore sample in queries
     Rule(re.compile(r"(?i)\bsample\s+\(([0-9\.]+)\s+rows\)"), replacement=r"order by random() limit \1"),
+    # current timestamp
+    Rule(re.compile(r"(?i)\bcurrent_timestamp\(\)"), replacement=r"current_timestamp"),
 ]
 
 

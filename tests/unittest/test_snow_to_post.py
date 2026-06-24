@@ -23,8 +23,11 @@ from yellowbox_snowglobe.snow_to_post import TextLiteral, snow_to_post, split_li
         ("select * from foo where x = 'desc table foo''2'", "select * from foo where x = 'desc table foo''2'"),
         ("select * from foo where x = '''desc table foo''2'", "select * from foo where x = '''desc table foo''2'"),
         ("select * from foo sample (10 rows)", "select * from foo order by random() limit 10"),
-        ("select json_column:field::number from foo", "select cast(json_column->>'field' as integer) from foo"),
-        ("select json_column:field::string from foo", "select json_column->>'field' from foo"),
+        ("select current_timestamp() from foo", "select current_timestamp from foo"),
+        ("select data:a::number from foo", "select cast(data->>'a' as integer) from foo"),
+        ("select data:a::int from foo", "select cast(data->>'a' as integer) from foo"),
+        ("select t.data:a::int from foo", "select cast(t.data->>'a' as integer) from foo"),
+        ("select data:a::string from foo", "select data->>'a' from foo"),
     ],
 )
 def test_snow_to_post(snow: str, post: str):

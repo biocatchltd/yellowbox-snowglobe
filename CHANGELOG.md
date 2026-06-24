@@ -1,4 +1,13 @@
 # Yellowbox Snowglobe Changelog
+## 0.2.7
+### Added
+* Added support for dotted JSON paths and JSON `::int` casts.
+* Added support for `parse_json(...)`.
+* Added support for `current_timestamp()` queries.
+* Added support for `DROP TABLE IF EXISTS` statements.
+### Fixed
+* Fixed Decimal query results serialization.
+* Fixed transaction handling after COMMIT and ROLLBACK.
 ## 0.2.6
 ### Added
 * Added support for ARRAY_CONSTRUCT for PostgreSQL
